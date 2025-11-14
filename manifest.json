@@ -1,0 +1,22 @@
+{
+  "name": "Orbit Ultimate",
+  "short_name": "Orbit",
+  "description": "Orbit Ultimate Chat Application",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111b21",
+  "theme_color": "#111b21",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "httpsZ://i.ibb.co/m0X5qR5/orbit-icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "httpsZ://i.ibb.co/C07BkTf/orbit-icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
