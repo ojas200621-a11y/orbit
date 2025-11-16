@@ -183,7 +183,7 @@
   <div id="screen-auth" class="fixed inset-0 z-50 app-bg flex flex-col items-center justify-center p-6 hidden">
     <div class="w-full max-w-sm text-center space-y-6">
       <div class="flex justify-center"><i class="ph-fill ph-planet text-6xl text-[#00a884]"></i></div>
-      <h1 class="text-3xl font-bold app-text">OJAS</h1>
+      <h1 class="text-3xl font-bold app-text">Orbit</h1>
       <div class="space-y-3 w-full">
         <input id="auth-email" type="email" placeholder="Email" class="w-full app-input app-text px-4 py-3 rounded-lg border app-border focus:border-[#00a884] outline-none">
         <input id="auth-pass" type="password" placeholder="Password" class="w-full app-input app-text px-4 py-3 rounded-lg border app-border focus:border-[#00a884] outline-none">
@@ -634,7 +634,12 @@
       }
       
       document.getElementById('screen-app').classList.remove('hidden'); document.getElementById('screen-auth').classList.add('hidden');
-      loadRecentChats(); setupGlobalListener();
+      loadRecentChats(); 
+      setupGlobalListener();
+      
+      // === ADDED FOR PUSH NOTIFICATIONS ===
+      subscribeToPushNotifications(); // Ask for notification permission
+
       const pendingInvite = localStorage.getItem('pending_join');
       if (pendingInvite) { localStorage.removeItem('pending_join'); await joinGroupWithCode(pendingInvite); }
     }
@@ -831,7 +836,7 @@
 
     async function loadMessages() {
        const area = document.getElementById('messages-area');
-       let query = supabase.from('messages').select('*, sender:sender_id(username, full_name)').order('created_at', { ascending: true });
+       let query = supabase.from('messages').select('*, sender:sender_id(username, full_name, is_verified)').order('created_at', { ascending: true });
        if(state.activeChat.type === 'dm') { const myId = state.user.id; const otherId = state.activeChat.id; query = query.or(`and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`); } 
        else { query = query.eq('group_id', state.activeChat.id); }
        const { data } = await query;
@@ -867,6 +872,7 @@
         });
     }
 
+    // === FUNCTION UPDATED ===
     function renderMessage(m) {
        const isMe = m.sender_id === state.user.id;
        const area = document.getElementById('messages-area');
@@ -885,7 +891,9 @@
        if(m.is_deleted) { content = `<span class="italic text-gray-400 flex items-center gap-1 text-[13px]"><i class="ph-fill ph-prohibit"></i> Deleted</span>`; } 
        else {
            if(content) content = linkify(content);
-           if(m.image_url) content = `<img src="${m.image_url}" class="rounded-lg max-w-[280px] w-full mb-1 cursor-pointer border border-white/10" onclick="openImageViewer(this.src)"><br>` + content;
+           
+           // === FIX 1: 'onclick' yahan se hata diya gaya hai ===
+           if(m.image_url) content = `<img src="${m.image_url}" class="rounded-lg max-w-[280px] w-full mb-1 cursor-pointer border border-white/10"><br>` + content;
            
            if(m.reply_to) {
                content = `<div onclick="scrollToMessage('${m.reply_to.id}')" class="reply-box truncate">
@@ -897,12 +905,15 @@
            if(m.is_forwarded) content = `<div class="text-[10px] text-gray-400 italic mb-1 flex items-center gap-1"><i class="ph-bold ph-share"></i> Forwarded</div>` + content;
        }
        
+       // === BLUE TICK FIX (CHANGE 1) ===
        let senderName = '';
        if(!isMe && state.activeChat.type === 'group' && m.sender) {
            const colors = ['text-orange-400', 'text-blue-400', 'text-pink-400', 'text-purple-400', 'text-yellow-400'];
            const color = colors[m.sender_id.charCodeAt(0) % colors.length];
-           senderName = `<div class="text-xs ${color} font-bold mb-1 cursor-pointer hover:underline" onclick="viewUserProfileById('${m.sender_id}')">${m.sender.full_name || m.sender.username}</div>`;
+           const verifiedTick = m.sender.is_verified ? ' <i class="ph-fill ph-seal-check text-blue-400 text-xs inline-block"></i>' : '';
+           senderName = `<div class="text-xs ${color} font-bold mb-1 cursor-pointer hover:underline" onclick="viewUserProfileById('${m.sender_id}')">${m.sender.full_name || m.sender.username}${verifiedTick}</div>`;
        }
+       // === END BLUE TICK FIX ===
 
        const time = new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
        const checks = isMe && !m.is_deleted ? `<i class="ph-bold ph-checks ${m.status==='read' ? 'text-blue-400' : 'text-gray-500'} ml-1"></i>` : '';
@@ -922,6 +933,22 @@
             ${reactionHTML}
          </div>`;
          
+       // === FIX 2: Naya event listener code yahan add kiya gaya hai ===
+       const imgEl = div.querySelector('.msg-text img'); // Image element ko dhundho
+       if (imgEl) {
+           // Ye 'click' listener modal kholega
+           imgEl.addEventListener('click', (e) => {
+               e.stopPropagation(); // Click event ko bubble (upar) hone se roko
+               openImageViewer(imgEl.src);
+           });
+           
+           // Ye 'touchstart' ko bubble hone se rokega (taaki long-press menu na khule)
+           imgEl.addEventListener('touchstart', (e) => {
+               e.stopPropagation();
+           });
+       }
+       // === FIX END ===
+
        let pressTimer;
        div.addEventListener('touchstart', () => { pressTimer = setTimeout(() => openMsgOptions(m), 600); });
        div.addEventListener('touchend', () => clearTimeout(pressTimer));
@@ -995,6 +1022,7 @@
 
        area.appendChild(div);
     }
+    // === FUNCTION UPDATE END ===
 
     window.sendMessage = async function(url=null) {
       const inp = document.getElementById('msg-input'); const txt = inp.value.trim();
@@ -1052,14 +1080,30 @@
     window.toggleChatMenu = function() { document.getElementById('chat-menu-dropdown').classList.toggle('hidden'); }
     window.clearChat = function() { if(confirm("Clear chat?")) { localStorage.setItem(`cleared_${state.activeChat.id}`, Date.now()); loadMessages(); toggleChatMenu(); } }
     
+    // === BLUE TICK FIX (CHANGE 2) ===
     function setupChatListener() { 
         if(state.chatSub) supabase.removeChannel(state.chatSub); 
         state.chatSub = supabase.channel('chat')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, p => { 
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async p => { // <-- 'async' add kiya hai
             if(p.eventType === 'INSERT') { 
-                const m = p.new; 
+                let m = p.new; // <-- 'const' se 'let' kiya hai
                 if((state.activeChat.type === 'group' && m.group_id === state.activeChat.id) || 
                    (state.activeChat.type === 'dm' && (m.sender_id === state.activeChat.id || m.receiver_id === state.activeChat.id || m.sender_id === state.user.id))) { 
+                    
+                    // === FIX: Naye message ke liye sender info fetch karein ===
+                    if (state.activeChat.type === 'group' && m.sender_id !== state.user.id && !m.sender) {
+                         const { data: senderData } = await supabase
+                            .from('profiles')
+                            .select('username, full_name, is_verified') // is_verified yahaan add kiya hai
+                            .eq('id', m.sender_id)
+                            .single();
+                        
+                        if (senderData) {
+                            m.sender = senderData; // Sender info ko message object se jod dein
+                        }
+                    }
+                    // === END FIX ===
+
                     renderMessage(m); 
                     setTimeout(() => {
                         const area = document.getElementById('messages-area');
@@ -1071,6 +1115,8 @@
             } 
         }).subscribe(); 
     }
+    // === END BLUE TICK FIX ===
+
     function setupGlobalListener() { supabase.channel('global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { if(p.new.receiver_id === state.user.id) showToast("New Message"); loadRecentChats(); }).subscribe(); }
 
     // === BLUE TICK LOGIC (MODIFIED) ===
@@ -1153,6 +1199,78 @@
     function copyInviteCode() { if (!state.activeChat.invite_code) return; const code = state.activeChat.invite_code; navigator.clipboard.writeText(code).then(() => { showToast("Invite Code Copied!"); }); }
 
     document.getElementById('msg-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+
+
+    // === PUSH NOTIFICATION LOGIC ===
+
+    // VAPID Public Key ko yahaan paste karein (Step 1 se)
+    const VAPID_PUBLIC_KEY = "BEExmrHoA5hPuHyL4M4Tp1cUT4V-XnP5NQQQE4IJiRGYtVsmTuV7-qf9Y--cPzOtnDuI1LMSX5kvE5CcOEPuZK8";
+
+    // Standard function to convert Base64 string
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function subscribeToPushNotifications() {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            console.log("Push notifications are not supported.");
+            return;
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            console.log("Notification permission not granted.");
+            return;
+        }
+
+        const reg = await navigator.serviceWorker.ready;
+        let subscription = await reg.pushManager.getSubscription();
+
+        if (subscription === null) {
+            // User abhi tak subscribed nahi hai, naya subscription banayein
+            console.log("Subscribing to push...");
+            try {
+                subscription = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+                console.log("New subscription:", subscription);
+                
+                // Subscription ko Supabase mein save karein
+                if (state.user) {
+                    const { error } = await supabase
+                        .from('profiles')
+                        .update({ push_subscription: subscription })
+                        .eq('id', state.user.id);
+                        
+                    if (error) {
+                        console.error('Error saving subscription:', error);
+                    } else {
+                        console.log('Push subscription saved to profile!');
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to subscribe:", err);
+            }
+        } else {
+            console.log("User is already subscribed:", subscription);
+             // Optionally, update the subscription on Supabase just in case
+            if (state.user) {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ push_subscription: subscription })
+                    .eq('id', state.user.id);
+                if (error) console.error('Error re-saving subscription:', error);
+            }
+        }
+    }
   </script>
 </body>
 </html>
