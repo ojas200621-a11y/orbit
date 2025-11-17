@@ -53,10 +53,18 @@
     }
 
     /* Base Styles */
-    html, body { height: 100dvh; overflow: hidden; background-color: var(--bg-app); color: var(--color-text); user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 0.3s, color 0.3s; }
+    html, body { 
+      height: 100dvh; /* Dynamic viewport height istemaal karna */
+      overflow: hidden; 
+      background-color: var(--bg-app); 
+      color: var(--color-text); 
+      user-select: none; /* Text selection band karna */
+      -webkit-tap-highlight-color: transparent; /* Tap par blue highlight hatana */
+      transition: background-color 0.3s, color 0.3s; 
+    }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     
-    /* Dynamic Classes */
+    /* Dynamic Classes (Theme ke liye) */
     .app-bg { background-color: var(--bg-app); }
     .app-header { background-color: var(--bg-header); color: white; }
     .app-input { background-color: var(--bg-input); }
@@ -67,18 +75,21 @@
     
     .chat-bg { 
       background-color: var(--bg-chat);
-      background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); 
+      background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911D-60D70FCDED21.png"); 
       background-repeat: repeat; 
       background-blend-mode: overlay; 
       opacity: var(--wallpaper-opacity);
       transition: background 0.3s ease, opacity 0.3s;
     }
     
-    /* Bubbles */
+    /* Message Bubbles */
     .bubble-in { background-color: var(--bg-incoming); border-radius: 0px 8px 8px 8px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); }
     .bubble-out { background-color: var(--bg-outgoing); border-radius: 8px 0px 8px 8px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); }
     
-    .msg-row { touch-action: pan-y; transition: margin 0.2s, transform 0.2s; }
+    .msg-row { 
+      touch-action: pan-y; /* Vertical scroll ko smooth rakhna */
+      transition: margin 0.2s, transform 0.2s; 
+    }
     
     /* Reply Context Box Style */
     .reply-box {
@@ -94,7 +105,7 @@
         opacity: 0.9;
     }
 
-    /* Highlighting Animation for Reply Jump */
+    /* Message par jump karne par highlight animation */
     .message-highlight {
         animation: highlightPulse 1s ease-out;
     }
@@ -104,6 +115,7 @@
         100% { transform: scale(1); background-color: transparent; opacity: 1; }
     }
 
+    /* Reaction Badge (Heart) */
     .reaction-badge {
         position: absolute; bottom: -12px; right: 8px;
         background-color: var(--bg-incoming);
@@ -116,19 +128,33 @@
         color: var(--color-text);
     }
 
-    .cropper-view-box, .cropper-face { border-radius: 50%; }
+    /* CropperJS ke liye styles (Round) */
+    /* Profile/Group ke liye round, Post ke liye square */
+    .cropper-view-box, .cropper-face { 
+        border-radius: var(--cropper-shape, 50%); /* Default round */
+    }
     .cropper-modal { opacity: 0.8; background-color: #000; }
     
+    /* Unread Messages Badge */
     .unread-badge {
         background-color: #25d366; color: #000; font-weight: bold; font-size: 0.7rem;
         padding: 0.1rem 0.4rem; border-radius: 999px; min-width: 1.2rem; text-align: center; margin-left: auto;
     }
     
+    /* Menu dropdown animation */
     .menu-anim { animation: slideDown 0.2s ease-out forwards; transform-origin: top right; }
     @keyframes slideDown { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+    /* === IMAGE ZOOM FIX === */
+    .pinch-zoom-container {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
   </style>
   
   <script>
+    // Tailwind config ko yahan define karna
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -151,7 +177,8 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
+        // Cache-buster add kiya hai (?v=2) taaki naya worker register ho
+        navigator.serviceWorker.register('service-worker.js?v=2') 
           .then(registration => {
             console.log('ServiceWorker registration successful: ', registration.scope);
           })
@@ -162,7 +189,7 @@
     }
   </script>
 </head>
-<body>
+<body class="antialiased font-sans">
 
   <div id="splash-screen" class="fixed inset-0 app-bg flex flex-col items-center justify-between py-20 z-[9999] transition-opacity duration-500">
     <div class="flex-1 flex items-center justify-center">
@@ -188,7 +215,7 @@
         <input id="auth-email" type="email" placeholder="Email" class="w-full app-input app-text px-4 py-3 rounded-lg border app-border focus:border-[#00a884] outline-none">
         <input id="auth-pass" type="password" placeholder="Password" class="w-full app-input app-text px-4 py-3 rounded-lg border app-border focus:border-[#00a884] outline-none">
         <button id="btn-login" onclick="handleAuth('login')" class="w-full bg-[#00a884] text-white font-bold py-3 rounded-lg hover:brightness-110">Login</button>
-        <button onclick="handleAuth('signup')" class="w-full text-[#00a884] py-2 text-sm">Create Account</button>
+        <button onclick="handleAuth('signup')" class="w-full app-input py-3 rounded-lg app-text text-sm font-bold border app-border hover:border-[#00a884] transition-all">Create Account</button>
         <p id="auth-msg" class="text-red-400 text-xs h-4"></p>
       </div>
     </div>
@@ -196,12 +223,72 @@
 
   <div id="screen-app" class="hidden h-full w-full flex overflow-hidden relative app-bg">
     
-    <div id="view-list" class="w-full md:w-[400px] flex flex-col border-r app-border app-bg h-full z-10 relative">
-      <header class="h-16 app-header flex items-center justify-between px-4 shrink-0 shadow-sm relative z-20">
-        <div class="flex items-center gap-3 cursor-pointer hover:opacity-80" onclick="openProfileEdit()">
-          <img id="my-avatar" src="" class="w-10 h-10 rounded-full object-cover bg-gray-700 border border-white/20">
-          <span id="my-header-name" class="font-bold tracking-wide text-lg text-white">Loading...</span>
+    <div id="view-feed" class="w-full md:w-[400px] flex flex-col app-bg h-full z-10 relative">
+      <header class="h-16 app-header flex items-center justify-between px-4 shrink-0 shadow-sm">
+        <span class="font-bold text-2xl text-white">Orbit</span>
+        <!-- NAYE ICONS YAHAN HAIN -->
+        <div class="flex items-center gap-6">
+           <!-- Notification icon (ab 'showNotifications' function call karega) -->
+           <button onclick="openNotifications()" class="text-white text-2xl relative">
+               <i class="ph-bold ph-heart"></i>
+               <div id="notification-badge" class="hidden absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#008069]"></div>
+           </button>
+           <!-- Naya Message icon (ab 'showTab' call karke chat list kholega) -->
+           <button onclick="showTab('chat')" class="text-white text-2xl relative">
+               <i class="ph-bold ph-paper-plane-tilt"></i>
+               <div id="chat-badge" class="hidden absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"></div>
+           </button>
         </div>
+      </header>
+      <div id="feed-container" class="flex-1 overflow-y-auto pb-20 hide-scrollbar"> <p class="app-subtext text-center mt-10 p-4">Aapka feed yahan dikhega...</p>
+        </div>
+    </div>
+
+    <div id="view-profile" class="hidden w-full md:w-[400px] flex-col app-bg h-full z-10 relative">
+      <header class="h-16 app-header flex items-center justify-between px-4 shrink-0 shadow-sm">
+        <div id="profile-header-container" class="flex items-center gap-1">
+    <span id="profile-page-fullname" class="font-bold text-lg text-white truncate">...</span>
+    <i id="profile-page-verified" class="ph-fill ph-seal-check text-blue-400 text-lg hidden"></i>
+</div>
+        <button onclick="openSettings()" class="text-white text-xl"><i class="ph-bold ph-gear"></i></button>
+      </header>
+      <div class="flex-1 overflow-y-auto p-4 pb-20 hide-scrollbar"> <div class="flex items-center gap-4 mb-4">
+            <img id="profile-page-avatar" src="" class="w-20 h-20 rounded-full object-cover bg-gray-700">
+            <h3 id="profile-page-name" class="font-bold app-text text-lg">...</h3>
+        </div>
+        <p id="profile-page-about" class="app-subtext text-sm mb-4">...</p>
+        
+        <div class="flex justify-around text-center mb-4 p-2 app-input rounded-lg border app-border">
+            <div><span id="profile-posts-count" class="font-bold text-lg app-text block">0</span><span class="app-subtext text-sm">Posts</span></div>
+            <div><span id="profile-followers-count" class="font-bold text-lg app-text block">0</span><span class="app-subtext text-sm">Followers</span></div>
+            <div><span id="profile-following-count" class="font-bold text-lg app-text block">0</span><span class="app-subtext text-sm">Following</span></div>
+        </div>
+
+        <!-- Profile Action Buttons -->
+        <div id="profile-action-buttons" class="w-full flex gap-2 mb-4">
+            <button onclick="openProfileEdit()" id="btn-edit-profile" class="w-full app-input py-2 rounded-lg app-text text-sm font-bold border app-border">Edit Profile</button>
+            <button id="btn-follow" class="w-full bg-[#00a884] text-white py-2 rounded-lg text-sm font-bold hidden">Follow</button>
+            <button id="btn-message" class="w-full app-input py-2 rounded-lg app-text text-sm font-bold border app-border hidden">Message</button>
+        </div>
+        
+        <hr class="app-border my-4">
+                <div id="profile-posts-grid" class="grid grid-cols-3 gap-1 mt-4">
+                    <!-- JS isko control karega -->
+                    <p id="profile-posts-placeholder" class="app-subtext text-center col-span-3">Loading...</p>
+                </div>
+
+      </div>
+    </div>
+
+    <div id="view-list" class="hidden w-full md:w-[400px] flex flex-col border-r app-border app-bg h-full z-10 relative">
+      
+      <header class="h-16 app-header flex items-center justify-between px-4 shrink-0 shadow-sm relative z-20">
+        <div class="flex items-center gap-4"> <button onclick="showTab('feed')" class="text-white text-xl">
+            <i class="ph-bold ph-arrow-left"></i>
+          </button>
+          <span class="font-bold text-2xl text-white">Orbit</span>
+        </div>
+        
         <div class="flex gap-6 text-white text-xl items-center">
           <button onclick="toggleSearchMode()"><i class="ph-bold ph-magnifying-glass"></i></button>
           <button onclick="toggleMainMenu()"><i class="ph-bold ph-dots-three-vertical"></i></button>
@@ -221,7 +308,7 @@
         </div>
       </div>
 
-      <div id="chat-list-container" class="flex-1 overflow-y-auto hide-scrollbar"></div>
+      <div id="chat-list-container" class="flex-1 overflow-y-auto hide-scrollbar pb-16"></div>
     </div>
 
     <div id="view-chat" class="absolute inset-0 app-bg flex flex-col transform translate-x-full transition-transform duration-300 md:static md:translate-x-0 md:flex-1 z-50">
@@ -283,9 +370,14 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="modal-settings" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center p-4">
+    <nav id="bottom-nav" class="md:hidden h-16 w-full app-header border-t app-border flex justify-around items-center absolute bottom-0 left-0 z-20">
+      <button class="p-3 text-white" onclick="showTab('feed')"><i class="ph-fill ph-house text-2xl"></i></button>
+      <!-- CHAT TAB HATA DIYA GAYA -->
+      <button class="p-3 text-white/70" onclick="showTab('post')"><i class="ph-fill ph-plus-square text-2xl"></i></button>
+      <button class="p-3 text-white/70" onclick="showTab('profile')"><i class="ph-fill ph-user text-2xl"></i></button>
+    </nav>
+    </div> <div id="modal-settings" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center p-4">
     <div class="app-modal w-full max-w-sm rounded-2xl p-6 border app-border animate-pop">
        <h3 class="text-xl font-bold app-text mb-6">Settings</h3>
        <div class="mb-6">
@@ -311,6 +403,9 @@
                <i class="ph-bold ph-caret-right app-subtext"></i>
            </div>
        </div>
+       
+       <button onclick="handleLogout()" class="w-full bg-[#2a1f1f] text-red-400 py-3 rounded-lg font-bold border border-red-900/30 my-4">Logout</button>
+       
        <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="w-full app-input py-3 rounded-lg app-text font-bold">Close</button>
     </div>
   </div>
@@ -328,18 +423,16 @@
           <div class="flex justify-between p-3 app-input rounded-lg border app-border"><span>1 Month</span> <span class="font-bold">₹99</span></div>
           <div class="flex justify-between p-3 app-input rounded-lg border app-border"><span>3 Months</span> <span class="font-bold">₹149</span></div>
        </div>
-
        <p class="text-sm app-subtext mb-3 font-bold uppercase">Step 1: Pay</p>
        <img src="https://i.ibb.co/XrVs6g40/Screenshot-20251113-193336.png" class="w-full max-w-[200px] mx-auto rounded-lg border-4 border-white mb-4">
-       
        <p class="text-sm app-subtext mb-3 font-bold uppercase">Step 2: Send Screenshot</p>
        <div class="app-input p-4 rounded-lg border app-border">
           <p class="text-sm app-text">Search for our official account and send the payment screenshot directly in the chat.</p>
           <p class="text-lg app-text font-bold text-center my-3 text-[#00a884]">@OrbitOfficial</p>
        </div>
-       
-       </div>
+    </div>
   </div>
+
   <div id="modal-wallpaper" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center p-6">
     <div class="app-modal w-full max-w-xs rounded-2xl p-5 border app-border animate-pop">
        <h3 class="text-lg font-bold mb-4 app-text">Choose Theme</h3>
@@ -359,10 +452,10 @@
 
   <div id="modal-image-viewer" class="fixed inset-0 z-[100] bg-black hidden flex flex-col animate-fade-in">
      <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent z-10">
-        <button onclick="document.getElementById('modal-image-viewer').classList.add('hidden')" class="text-white p-2 bg-white/10 rounded-full backdrop-blur-md"><i class="ph-bold ph-arrow-left text-xl"></i></button>
+        <button onclick="closeImageViewer()" class="text-white p-2 bg-white/10 rounded-full backdrop-blur-md"><i class="ph-bold ph-arrow-left text-xl"></i></button>
      </div>
-     <div class="flex-1 flex items-center justify-center p-2 overflow-hidden">
-        <img id="full-image" src="" class="max-w-full max-h-full object-contain transition-transform duration-200">
+     <div class="flex-1 flex items-center justify-center p-0 overflow-hidden pinch-zoom-container">
+        <img id="full-image" src="" class="max-w-full max-h-full object-contain">
      </div>
   </div>
 
@@ -409,7 +502,10 @@
            <div onclick="initCropperUpload('profile')" class="absolute bottom-0 right-0 bg-[#00a884] p-2.5 rounded-full cursor-pointer text-white shadow-lg"><i class="ph-bold ph-camera"></i></div>
         </div>
         <div class="w-full space-y-4">
-           <input id="profile-name" class="w-full app-input p-3 rounded-lg app-text outline-none border app-border" placeholder="Name">
+           <input id="profile-name" class="w-full app-input p-3 rounded-lg app-text outline-none border app-border" placeholder="Name (e.g. Vinit Kumar)">
+           
+           <!-- NAYA USERNAME FIELD -->
+           
            <input id="profile-about" class="w-full app-input p-3 rounded-lg app-text outline-none border app-border" placeholder="About">
         </div>
         <div class="flex w-full gap-3 mt-2">
@@ -420,12 +516,29 @@
     </div>
   </div>
   
-  <div id="modal-forward" class="fixed inset-0 z-[70] bg-black/90 hidden flex flex-col p-4 animate-fade-in">
-     <div class="flex justify-between items-center mb-4 text-white">
-        <h3 class="text-lg font-bold">Forward to...</h3>
-        <button onclick="document.getElementById('modal-forward').classList.add('hidden')" class="text-gray-400">Cancel</button>
-     </div>
-     <div id="forward-list" class="flex-1 overflow-y-auto"></div>
+  <div id="modal-forward" class="fixed inset-0 z-[70] bg-black/80 hidden flex items-end md:items-center justify-center p-0">
+    <div class="app-modal w-full md:w-full md:max-w-md h-[70vh] rounded-t-2xl md:rounded-2xl border app-border animate-slide-up flex flex-col">
+       
+       <!-- Modal Header -->
+       <div class="flex justify-between items-center p-4 border-b app-border shrink-0">
+         <h3 class="text-xl font-bold app-text">Forward to...</h3>
+         <button onclick="document.getElementById('modal-forward').classList.add('hidden')" class="app-subtext"><i class="ph-bold ph-x text-xl"></i></button>
+       </div>
+       
+       <!-- NAYA: Search Input -->
+       <div class="p-2 border-b app-border shrink-0">
+           <div class="app-input rounded-lg flex items-center px-3 py-2 border app-border">
+               <i class="ph-bold ph-magnifying-glass app-subtext mr-2"></i>
+               <input id="forward-search-input" type="text" placeholder="Search users..." class="bg-transparent border-none outline-none text-sm w-full app-text" onkeyup="loadForwardList()">
+           </div>
+       </div>
+
+       <!-- Forward List -->
+       <div id="forward-list" class="flex-1 overflow-y-auto p-2">
+          <p class="app-subtext text-center p-4">Loading contacts...</p>
+       </div>
+
+    </div>
   </div>
 
   <div id="modal-user-view" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center p-6">
@@ -521,6 +634,14 @@
         <button id="btn-remove-member" onclick="handleMemberAction('remove')" class="w-full text-left px-6 py-4 text-red-400 hover:bg-black/5 flex gap-4 items-center"><i class="ph-bold ph-user-minus text-xl"></i> Remove from Group</button>
      </div>
   </div>
+
+  <div id="modal-post-options" class="fixed inset-0 z-[80] bg-black/60 hidden flex items-end md:items-center justify-center md:p-0" onclick="document.getElementById('modal-post-options').classList.add('hidden')">
+     <div class="app-modal w-full md:w-64 rounded-t-2xl md:rounded-xl shadow-2xl overflow-hidden animate-slide-up" onclick="event.stopPropagation()">
+        <div class="p-2 flex justify-center md:hidden"><div class="w-10 h-1 bg-gray-600 rounded-full"></div></div>
+        <button onclick="handlePostAction('delete')" class="w-full text-left px-6 py-4 text-red-400 hover:bg-black/5 flex gap-4 items-center"><i class="ph-bold ph-trash text-xl"></i> Delete Post</button>
+        <button onclick="document.getElementById('modal-post-options').classList.add('hidden')" class="w-full text-left px-6 py-4 app-text hover:bg-black/5 flex gap-4 items-center"><i class="ph-bold ph-x text-xl"></i> Cancel</button>
+     </div>
+  </div>
   
   <div id="chat-options-overlay" class="fixed inset-0 z-[80] bg-black/60 hidden flex items-center justify-center p-6" onclick="document.getElementById('chat-options-overlay').classList.add('hidden')">
      <div class="app-modal w-full max-w-xs rounded-xl shadow-2xl overflow-hidden animate-slide-up" onclick="event.stopPropagation()">
@@ -529,748 +650,1934 @@
      </div>
   </div>
 
+  <div id="modal-create-post" class="fixed inset-0 z-[70] bg-black/80 hidden flex items-center justify-center p-4">
+    <div class="app-modal w-full max-w-md rounded-2xl p-6 border app-border animate-pop flex flex-col">
+       <div class="flex justify-between items-center mb-6">
+         <h3 class="text-xl font-bold app-text">Create New Post</h3>
+         <button onclick="closePostModal()" class="app-subtext"><i class="ph-bold ph-x text-xl"></i></button>
+       </div>
+       
+       <div id="post-image-preview" class="w-full h-64 bg-gray-800 rounded-lg flex items-center justify-center text-gray-500 cursor-pointer mb-4 border-2 border-dashed app-border" onclick="initCropperUpload('post_image')">
+          <i class="ph-bold ph-image text-4xl"></i>
+          <img id="post-image-img" src="" class="hidden w-full h-full object-cover rounded-lg">
+       </div>
+
+       <textarea id="post-caption-input" class="w-full app-input p-3 rounded-lg app-text outline-none mb-6 border app-border focus:border-[#00a884]" rows="3" placeholder="Write a caption..."></textarea>
+       
+       <button id="btn-upload-post" onclick="handlePostUpload()" class="w-full bg-[#00a884] py-3 rounded-lg text-white font-bold">Share</button>
+    </div>
+  </div>
+
+  <!-- NAYA: COMMENT MODAL -->
+  <div id="modal-comments" class="fixed inset-0 z-[70] bg-black/80 hidden flex flex-col p-0 md:items-center md:justify-center">
+    <div class="app-modal w-full md:w-full md:max-w-md h-full md:h-[80vh] rounded-none md:rounded-2xl border app-border animate-slide-up flex flex-col">
+       
+       <!-- Modal Header -->
+       <div class="flex justify-between items-center p-4 border-b app-border shrink-0">
+         <h3 class="text-xl font-bold app-text">Comments</h3>
+         <button onclick="closeComments()" class="app-subtext"><i class="ph-bold ph-x text-xl"></i></button>
+       </div>
+       
+       <!-- Comments List -->
+       <div id="comments-list" class="flex-1 overflow-y-auto p-0">
+          <p class="app-subtext text-center p-4">Loading comments...</p>
+       </div>
+
+       <!-- Comment Input Footer -->
+       <div class="p-2 flex items-center gap-2 shrink-0 border-t app-border app-bg">
+          <img id="comment-modal-avatar" src="" class="w-9 h-9 rounded-full object-cover bg-gray-700">
+          <div class="flex-1 app-input rounded-2xl flex items-center px-4 py-2 border app-border focus-within:border-[#00a884] transition">
+             <input id="comment-input" type="text" class="w-full bg-transparent app-text border-none outline-none text-[15px]" placeholder="Add a comment..." autocomplete="off">
+          </div>
+          <button onclick="postComment()" id="btn-post-comment" class="p-3 text-[#00a884] active:scale-90 transition"><i class="ph-fill ph-paper-plane-right text-lg"></i></button>
+       </div>
+    </div>
+  </div>
+
+  <div id="modal-post-view" class="fixed inset-0 z-[75] app-bg hidden flex flex-col p-0 overflow-y-auto">
+     <header class="h-16 app-header flex items-center justify-between px-4 shrink-0 shadow-sm">
+        <button onclick="closePostView()" class="text-white text-xl p-2"><i class="ph-bold ph-arrow-left"></i></button>
+        <span class="font-bold text-2xl text-white">Post</span>
+        <div class="w-10"></div> </header>
+     
+     <div id="post-view-content" class="flex-1 overflow-y-auto">
+        <p class="app-subtext text-center p-10">Loading post...</p>
+     </div>
+  </div>
+
+  <div id="modal-notifications" class="fixed inset-0 z-[75] app-bg hidden flex flex-col p-0 overflow-y-auto">
+     <header class="h-16 app-header flex items-center justify-between px-4 shrink-0 shadow-sm">
+        <button onclick="closeNotifications()" class="text-white text-xl p-2"><i class="ph-bold ph-arrow-left"></i></button>
+        <span class="font-bold text-2xl text-white">Notifications</span>
+        <div class="w-10"></div> </header>
+     <div id="notifications-list" class="flex-1 overflow-y-auto">
+        <p class="app-subtext text-center p-10">Loading notifications...</p>
+     </div>
+  </div>
+
+  <script src="https://unpkg.com/pinch-zoom-js@2.3.7/dist/pinch-zoom.umd.js?v=2"></script>
+
   <script>
-    const SUPABASE_URL = 'https://muhyqhtczfjuxerazgbu.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11aHlxaHRjemZqdXhlcmF6Z2J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NzM3ODAsImV4cCI6MjA3ODM0OTc4MH0.ckkHzSw3usSNtoeTlVM4fh3UKPz1yjbccpNuq1jNrZk';
-    const IMGBB_KEY = '649ee6496d7ce556b92827e22a0507f2';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 'load' event istemaal kiya gaya hai taaki saari scripts (PinchZoom samet) load ho jaayein
+    window.addEventListener('load', () => {
 
-    let state = { user: null, profile: null, activeChat: null, replyTo: null, chatSub: null, forwardContent: null, selectedMsg: null, createGroupImg: null, selectedChatForAction: null, viewedUserProfile: null, selectedMemberForAction: null };
-    let selectedGroupMembers = new Set();
-    let cropper = null;
-    let currentCropContext = null;
+      // Supabase credentials
+      const SUPABASE_URL = 'https://muhyqhtczfjuxerazgbu.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11aHlxaHRjemZqdXhlcmF6Z2J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NzM3ODAsImV4cCI6MjA3ODM0OTc4MH0.ckkHzSw3usSNtoeTlVM4fh3UKPz1yjbccpNuq1jNrZk';
+      const IMGBB_KEY = '649ee6496d7ce556b92827e22a0507f2'; // Image upload ke liye key
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // === THEME LOGIC ===
-    function initTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        setTheme(savedTheme);
-    }
-    
-    function toggleTheme() {
-        const isDark = document.documentElement.classList.contains('dark');
-        const newTheme = isDark ? 'light' : 'dark';
-        setTheme(newTheme);
-    }
-    
-    function setTheme(mode) {
-        const html = document.documentElement;
-        const toggleIcon = document.getElementById('theme-toggle-icon');
-        const toggleDot = toggleIcon ? toggleIcon.querySelector('div') : null;
-        
-        if (mode === 'dark') {
-            html.classList.add('dark');
-            if (toggleIcon) {
-                toggleIcon.classList.remove('bg-[#00a884]');
-                toggleIcon.classList.add('bg-gray-600');
-                toggleDot.style.transform = 'translateX(0)';
-            }
-        } else {
-            html.classList.remove('dark');
-            if (toggleIcon) {
-                toggleIcon.classList.remove('bg-gray-600');
-                toggleIcon.classList.add('bg-[#00a884]');
-                toggleDot.style.transform = 'translateX(20px)';
-            }
-        }
-        localStorage.setItem('theme', mode);
-    }
-    
-    function openSettings() {
-        document.getElementById('modal-settings').classList.remove('hidden');
-    }
-    
-    function toggleMainMenu() {
-        document.getElementById('main-menu-dropdown').classList.toggle('hidden');
-    }
+      // Global state
+      let state = { user: null, profile: null, activeChat: null, replyTo: null, chatSub: null, forwardContent: null, selectedMsg: null, createGroupImg: null, selectedChatForAction: null, viewedUserProfile: null, selectedMemberForAction: null, commentSub: null, selectedPostForAction: null };
+      let selectedGroupMembers = new Set();
+      let cropper = null;
+      let currentCropContext = null;
+      let pinchZoomInstance = null; // Zoom instance ke liye variable
 
-    function showToast(msg, isError = false) {
-      const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg;
-      t.style.backgroundColor = isError ? '#ef4444' : 'var(--bg-header)'; 
-      t.classList.remove('hidden', 'translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('hidden'), 3000);
-    }
-    
-    function getSmartDate(dateStr) {
-       const d = new Date(dateStr); const now = new Date();
-       if(d.toDateString() === now.toDateString()) return "Today";
-       const diff = now - d; const oneDay = 86400000;
-       if(diff < oneDay * 2 && d.getDate() !== now.getDate()) return "Yesterday";
-       return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-
-    async function init() {
-      initTheme();
-      const inviteCode = new URLSearchParams(window.location.search).get('join');
-      if (inviteCode) { localStorage.setItem('pending_join', inviteCode); history.pushState({}, '', window.location.pathname); }
-      setTimeout(() => document.getElementById('splash-screen').classList.add('opacity-0', 'pointer-events-none'), 1000);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) setupUser(session.user); else document.getElementById('screen-auth').classList.remove('hidden');
-      supabase.auth.onAuthStateChange((_, s) => {
-          if (s) setupUser(s.user); else {
-              document.getElementById('screen-app').classList.add('hidden'); document.getElementById('screen-auth').classList.remove('hidden'); state = { user: null, profile: null, activeChat: null };
-          }
-      });
-    }
-    init();
-
-    async function setupUser(user) {
-      state.user = user;
-      let { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-      if (!data) {
-        const name = user.email.split('@')[0];
-        const newP = { id: user.id, username: name + Math.floor(Math.random()*1000), full_name: name, avatar_url: 'https://i.ibb.co/K0054k7/user-placeholder.png', is_online: true };
-        await supabase.from('profiles').insert(newP); state.profile = newP;
-      } else { state.profile = data; await supabase.from('profiles').update({ is_online: true }).eq('id', user.id); }
-      // Set avatar (yeh line pehle se hai)
-      document.getElementById('my-avatar').src = state.profile.avatar_url;
-      
-      // Naya code: Header mein user ka naam set karein
-      const headerNameEl = document.getElementById('my-header-name');
-      headerNameEl.textContent = state.profile.full_name || state.profile.username; // Pehle full_name, nahi toh username
-      
-      // Verified check ko update kiya gaya hai
-      if (state.profile.is_verified) {
-          // Naam ke aage tick jodega, "OJAS" se replace nahi karega
-          headerNameEl.innerHTML += ` <i class="ph-fill ph-seal-check text-blue-400 text-base inline-block"></i>`;
+      // === THEME LOGIC ===
+      function initTheme() {
+          const savedTheme = localStorage.getItem('theme') || 'dark';
+          setTheme(savedTheme);
       }
       
-      document.getElementById('screen-app').classList.remove('hidden'); document.getElementById('screen-auth').classList.add('hidden');
-      loadRecentChats(); 
-      setupGlobalListener();
-      
-      // === ADDED FOR PUSH NOTIFICATIONS ===
-      subscribeToPushNotifications(); // Ask for notification permission
-
-      const pendingInvite = localStorage.getItem('pending_join');
-      if (pendingInvite) { localStorage.removeItem('pending_join'); await joinGroupWithCode(pendingInvite); }
-    }
-
-    window.handleAuth = async function(type) {
-      const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
-      if(!email || !pass) return showToast("Fill all fields", true);
-      const btn = document.getElementById('btn-login');
-      const originalText = btn.innerText;
-      if(type==='login') { btn.innerText = "Logging in..."; btn.innerHTML = '<div class="loader w-4 h-4 border-black mr-2"></div> Logging in...'; }
-      else document.getElementById('auth-msg').textContent = "Processing...";
-      let res = type === 'signup' ? await supabase.auth.signUp({ email, password: pass }) : await supabase.auth.signInWithPassword({ email, password: pass });
-      if(res.error) { document.getElementById('auth-msg').textContent = res.error.message; btn.innerText = originalText; }
-      else if(type === 'signup') await supabase.auth.signInWithPassword({ email, password: pass });
-    }
-
-    window.handleLogout = async function() {
-      document.getElementById('modal-profile-edit').classList.add('hidden'); document.getElementById('screen-app').classList.add('hidden'); document.getElementById('screen-auth').classList.remove('hidden');
-      if(state.user) await supabase.from('profiles').update({ is_online: false }).eq('id', state.user.id);
-      await supabase.auth.signOut();
-    }
-
-    window.loadRecentChats = async function() {
-      const el = document.getElementById('chat-list-container');
-      if(!el.hasChildNodes()) el.innerHTML = '<div class="flex justify-center mt-10"><div class="loader border-[#00a884]"></div></div>';
-      const { data: myGroups } = await supabase.from('group_members').select('group_id').eq('user_id', state.user.id);
-      const myGroupIds = myGroups ? myGroups.map(g => g.group_id) : [];
-      const { data: dmMessages } = await supabase.from('messages').select('*').or(`sender_id.eq.${state.user.id},receiver_id.eq.${state.user.id}`).is('group_id', null).order('created_at', { ascending: false }).limit(200);
-      let groupMessages = [];
-      if(myGroupIds.length > 0) {
-        const { data: gMsgs } = await supabase.from('messages').select('*').in('group_id', myGroupIds).order('created_at', { ascending: false }).limit(200);
-        groupMessages = gMsgs || [];
+      window.toggleTheme = function() {
+          const isDark = document.documentElement.classList.contains('dark');
+          const newTheme = isDark ? 'light' : 'dark';
+          setTheme(newTheme);
       }
-      let chatMap = new Map(); 
-      if(dmMessages) dmMessages.forEach(m => {
-         const pid = m.sender_id === state.user.id ? m.receiver_id : m.sender_id;
-         if(pid && !chatMap.has(pid)) {
-             if(localStorage.getItem(`chat_deleted_${pid}`)) return;
-             const clearedTime = localStorage.getItem(`cleared_${pid}`) || 0;
-             if(new Date(m.created_at).getTime() > clearedTime) {
-                 let unread = (m.sender_id === pid && m.status !== 'read') ? 1 : 0;
-                 chatMap.set(pid, { type: 'dm', id: pid, lastMsg: m.is_deleted ? 'Deleted' : (m.content || 'Media'), time: m.created_at, unread: unread });
-             }
-         } else if(chatMap.has(pid) && m.sender_id === pid && m.status !== 'read') {
-             chatMap.get(pid).unread++;
-         }
-      });
-      if(groupMessages) groupMessages.forEach(m => {
-         if(!chatMap.has(m.group_id)) {
-             if(localStorage.getItem(`chat_deleted_${m.group_id}`)) return;
-             chatMap.set(m.group_id, { type: 'group', id: m.group_id, lastMsg: m.is_deleted ? 'Deleted' : (m.content || 'Media'), time: m.created_at, unread: 0 });
-         }
-      });
-      myGroupIds.forEach(gid => { 
-          if(!chatMap.has(gid) && !localStorage.getItem(`chat_deleted_${gid}`)) 
-            chatMap.set(gid, { type: 'group', id: gid, lastMsg: 'Group created', time: new Date().toISOString(), unread: 0 }); 
-      });
-      const dmIds = Array.from(chatMap.values()).filter(c => c.type === 'dm').map(c => c.id);
-      const groupIds = Array.from(chatMap.values()).filter(c => c.type === 'group').map(c => c.id);
-      let profiles = [], groups = [];
-      if(dmIds.length) { const { data } = await supabase.from('profiles').select('*').in('id', dmIds); profiles = data || []; }
-      if(groupIds.length) { const { data } = await supabase.from('groups').select('*').in('id', groupIds); groups = data || []; }
-      let finalChats = Array.from(chatMap.values()).map(c => {
-         if(c.type === 'dm') { const p = profiles.find(x => x.id === c.id); return p ? { ...c, name: p.full_name || p.username, avatar: p.avatar_url, obj: p } : null; } 
-         else { const g = groups.find(x => x.id === c.id); return g ? { ...c, name: g.name, avatar: g.avatar_url || 'https://i.ibb.co/HpDV8hX/group-placeholder.png', obj: g } : null; }
-      }).filter(x => x).sort((a,b) => new Date(b.time) - new Date(a.time));
-      el.innerHTML = '';
-      if(finalChats.length === 0) el.innerHTML = '<div class="text-center mt-20 app-subtext text-sm">Start a new chat</div>';
-      finalChats.forEach(c => {
-         const div = document.createElement('div');
-         div.id = `chat-item-${c.id}`;
-         div.className = 'flex items-center gap-3 p-3 hover:bg-black/5 cursor-pointer border-b app-border transition-colors duration-200';
-         div.onclick = () => openChat(c.obj, c.type);
-         const badge = c.unread > 0 ? `<div class="unread-badge">${c.unread > 99 ? '99+' : c.unread}</div>` : '';
-         
-         div.innerHTML = `<div class="relative"><img src="${c.avatar}" class="w-12 h-12 rounded-full object-cover bg-gray-700 cursor-pointer" onclick="(function(e){ e.stopPropagation(); openImageViewer('${c.avatar}'); })(event)">${c.type==='dm' && c.obj.is_online ? `<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>` : ''}</div><div class="flex-1 min-w-0"><div class="flex justify-between"><h4 class="app-text font-medium truncate text-[15px] flex items-center gap-1">${c.name} ${c.type==='dm' && c.obj.is_verified ? '<i class="ph-fill ph-seal-check text-blue-400 text-sm"></i>' : ''}</h4><span class="text-[11px] app-subtext ${c.unread > 0 ? 'text-green-500 font-bold' : ''}">${getSmartDate(c.time)}</span></div><div class="flex justify-between items-center"><p class="text-[13px] app-subtext truncate max-w-[70%]">${c.lastMsg}</p>${badge}</div></div>`;
-         
-         el.appendChild(div);
-      });
-    }
-
-    window.openChatOptions = function(c) { state.selectedChatForAction = c; document.getElementById('chat-options-title').textContent = c.name; document.getElementById('chat-options-overlay').classList.remove('hidden'); }
-    window.handleChatAction = async function(action) { document.getElementById('chat-options-overlay').classList.add('hidden'); if(action === 'delete') { if(confirm(`Remove ${state.selectedChatForAction.name} from list?`)) { localStorage.setItem(`chat_deleted_${state.selectedChatForAction.id}`, true); showToast("Chat removed"); loadRecentChats(); } } }
-
-    window.openChat = async function(obj, type) {
-      state.activeChat = { ...obj, type, iAmAdmin: false, allMembers: [] };
-      document.getElementById('view-chat').classList.remove('translate-x-full');
-      document.getElementById('chat-empty').classList.add('hidden');
-      document.getElementById('chat-interface').classList.remove('hidden');
-      const viewport = document.querySelector('meta[name=viewport]');
-      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content');
-      const badge = document.querySelector(`#chat-item-${obj.id} .unread-badge`);
-      if(badge) badge.remove();
-      const savedBg = localStorage.getItem(`chat_bg_${state.activeChat.id}`);
-      if(savedBg) { 
-          if(savedBg === 'default') {
-              document.querySelector('.chat-bg').style.backgroundImage = "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')";
+      
+      function setTheme(mode) {
+          const html = document.documentElement;
+          const toggleIcon = document.getElementById('theme-toggle-icon');
+          const toggleDot = toggleIcon ? toggleIcon.querySelector('div') : null;
+          
+          if (mode === 'dark') {
+              html.classList.add('dark');
+              if (toggleIcon) {
+                  toggleIcon.classList.remove('bg-[#00a884]');
+                  toggleIcon.classList.add('bg-gray-600');
+                  toggleDot.style.transform = 'translateX(0)';
+              }
           } else {
-              document.querySelector('.chat-bg').style.backgroundImage = savedBg; 
+              html.classList.remove('dark');
+              if (toggleIcon) {
+                  toggleIcon.classList.remove('bg-gray-600');
+                  toggleIcon.classList.add('bg-[#00a884]');
+                  toggleDot.style.transform = 'translateX(20px)';
+              }
           }
-      } else {
-          document.querySelector('.chat-bg').style.backgroundImage = "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')";
+          localStorage.setItem('theme', mode);
       }
       
-      document.getElementById('chat-user-name').textContent = type === 'dm' ? (obj.full_name || obj.username) : obj.name;
-      if (type === 'dm' && obj.is_verified) {
-          document.getElementById('chat-user-name').innerHTML = `${obj.full_name || obj.username} <i class="ph-fill ph-seal-check text-blue-400 text-base inline-block"></i>`;
+      window.openSettings = function() {
+          document.getElementById('modal-settings').classList.remove('hidden');
       }
       
-      document.getElementById('chat-user-avatar').src = obj.avatar_url || 'https://i.ibb.co/HpDV8hX/group-placeholder.png';
-      const isDM = type === 'dm';
-      const blocked = isDM ? localStorage.getItem(`blocked_${obj.id}`) : false;
-      const blockBtn = document.getElementById('menu-block-btn');
-      if(isDM) {
-          document.getElementById('chat-user-status').textContent = obj.is_online ? 'Online' : 'Offline';
-          blockBtn.innerHTML = blocked ? '<i class="ph ph-check-circle mr-2"></i> Unblock' : '<i class="ph ph-prohibit mr-2"></i> Block';
-          blockBtn.onclick = () => handleBlock();
-          if(blocked) { document.getElementById('chat-footer').classList.add('hidden'); document.getElementById('blocked-banner').classList.remove('hidden'); } 
-          else { document.getElementById('chat-footer').classList.remove('hidden'); document.getElementById('blocked-banner').classList.add('hidden'); }
-      } else { 
-          const { data } = await supabase.from('group_members').select('is_admin').eq('group_id', obj.id).eq('user_id', state.user.id).single();
-          state.activeChat.iAmAdmin = data ? data.is_admin : false;
-          document.getElementById('chat-user-status').textContent = 'Group';
-          blockBtn.innerHTML = '<i class="ph ph-sign-out mr-2"></i> Leave Group'; 
-          blockBtn.onclick = () => handleBlockLeave(); 
-          if (state.activeChat.is_locked && !state.activeChat.iAmAdmin) document.getElementById('chat-footer').classList.add('hidden');
-          else document.getElementById('chat-footer').classList.remove('hidden');
-          document.getElementById('blocked-banner').classList.add('hidden'); 
+      window.toggleMainMenu = function() {
+          document.getElementById('main-menu-dropdown').classList.toggle('hidden');
       }
-      document.getElementById('chat-menu-dropdown').classList.add('hidden');
-      if(isDM) await supabase.from('messages').update({ status: 'read' }).eq('sender_id', obj.id).eq('receiver_id', state.user.id).eq('status', 'sent');
-      document.getElementById('messages-area').style.scrollBehavior = 'auto';
-      await loadMessages(); setupChatListener();
-      setTimeout(() => { document.getElementById('messages-area').style.scrollBehavior = 'smooth'; }, 500);
-    }
-    
-    window.viewChatInfo = async function() {
-        if (!state.activeChat) return;
-        const modal = document.getElementById('modal-user-view');
-        const obj = state.activeChat;
-        const type = state.activeChat.type;
-        document.getElementById('btn-edit-group').classList.add('hidden');
-        document.getElementById('view-user-info').classList.add('hidden');
-        document.getElementById('group-info-extra').classList.add('hidden');
-        document.getElementById('view-action-btn').classList.add('hidden');
-        document.getElementById('view-invite-link-container').classList.add('hidden'); 
-        document.getElementById('view-avatar').src = obj.avatar_url || (type === 'group' ? 'https://i.ibb.co/HpDV8hX/group-placeholder.png' : 'https://i.ibb.co/K0054k7/user-placeholder.png');
-        
-        document.getElementById('view-name').textContent = type === 'dm' ? (obj.full_name || obj.username) : obj.name;
-        if (type === 'dm' && obj.is_verified) {
-             document.getElementById('view-name').innerHTML = `${obj.full_name || obj.username} <i class="ph-fill ph-seal-check text-blue-400 text-xl inline-block"></i>`;
-        }
-        
-        if (type === 'dm') {
-            document.getElementById('view-username').textContent = '@' + obj.username;
-            document.getElementById('view-about').textContent = obj.about || '...';
-            document.getElementById('view-user-info').classList.remove('hidden'); 
-        } else { 
-            document.getElementById('view-username').textContent = 'Group';
-            document.getElementById('group-info-extra').classList.remove('hidden'); 
-            if(state.activeChat.iAmAdmin) document.getElementById('btn-edit-group').classList.remove('hidden');
-            if (state.activeChat.invite_code) document.getElementById('view-invite-link-container').classList.remove('hidden');
-            const membersList = document.getElementById('view-group-members');
-            membersList.innerHTML = '<div class="app-subtext text-sm">Loading members...</div>';
-            const { data: memberLinks } = await supabase.from('group_members').select('user_id, is_admin').eq('group_id', obj.id);
-            if (memberLinks) {
-                const userIds = memberLinks.map(m => m.user_id);
-                const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
-                if (profiles) {
-                    state.activeChat.allMembers = profiles.map(p => ({ ...p, is_admin: memberLinks.find(m => m.user_id === p.id)?.is_admin || false }));
-                    membersList.innerHTML = '';
-                    state.activeChat.allMembers.forEach(p => {
-                        const d = document.createElement('div');
-                        d.className = 'flex items-center gap-3 p-2 rounded-lg';
-                        d.innerHTML = `<img src="${p.avatar_url}" class="w-8 h-8 rounded-full object-cover"><span class="flex-1 app-text">${p.full_name} ${p.id === state.user.id ? '(You)' : ''}</span>${p.is_admin ? '<span class="text-xs text-[#00a884] font-bold">Admin</span>' : ''}`;
-                        membersList.appendChild(d);
-                    });
-                    document.getElementById('view-about').textContent = `${memberLinks.length} participants`;
-                }
-            }
-            document.getElementById('view-user-info').classList.remove('hidden');
-        }
-        modal.classList.remove('hidden');
-    }
 
-    window.closeChat = function() {
-       document.getElementById('view-chat').classList.add('translate-x-full');
-       state.activeChat = null; if(state.chatSub) supabase.removeChannel(state.chatSub);
-       document.getElementById('unread-banner').classList.add('hidden');
-       const viewport = document.querySelector('meta[name=viewport]');
-       viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-       setTimeout(() => { document.getElementById('messages-area').innerHTML = ''; loadRecentChats(); }, 300);
-    }
-
-    async function loadMessages() {
-       const area = document.getElementById('messages-area');
-       let query = supabase.from('messages').select('*, sender:sender_id(username, full_name, is_verified)').order('created_at', { ascending: true });
-       if(state.activeChat.type === 'dm') { const myId = state.user.id; const otherId = state.activeChat.id; query = query.or(`and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`); } 
-       else { query = query.eq('group_id', state.activeChat.id); }
-       const { data } = await query;
-       area.innerHTML = '';
-       if(data) {
-          let lastDate = ''; const clearTime = localStorage.getItem(`cleared_${state.activeChat.id}`) || 0;
-          data.forEach(m => {
-             if(new Date(m.created_at).getTime() < clearTime) return;
-             if(localStorage.getItem(`del_me_${m.id}`)) return;
-             const dLabel = getSmartDate(m.created_at);
-             if(dLabel !== lastDate) { area.innerHTML += `<div class="flex justify-center my-4"><span class="app-modal app-subtext text-xs px-3 py-1 rounded-lg font-medium shadow-sm border app-border">${dLabel}</span></div>`; lastDate = dLabel; }
-             renderMessage(m);
-          });
-          setTimeout(() => { area.scrollTop = area.scrollHeight; }, 0);
-       }
-    }
-
-    window.scrollToMessage = function(msgId) {
-        const el = document.getElementById('msg-' + msgId);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.querySelector('div').classList.add('message-highlight');
-            setTimeout(() => el.querySelector('div').classList.remove('message-highlight'), 1000);
-        } else {
-            showToast("Message not loaded");
-        }
-    }
-
-    function linkify(text) {
-        const urlRegex = /(https?:\/\/[^\s]+)/g; 
-        return text.replace(urlRegex, (url) => {
-            return `<a href="${url}" target="_blank" class="text-blue-400 hover:underline cursor-pointer break-all relative z-10" onclick="event.stopPropagation()">${url}</a>`;
-        });
-    }
-
-    // === FUNCTION UPDATED ===
-    function renderMessage(m) {
-       const isMe = m.sender_id === state.user.id;
-       const area = document.getElementById('messages-area');
-       const div = document.createElement('div');
-       
-       let heartUsers = [];
-       if (m.reactions && m.reactions['heart']) {
-           if (Array.isArray(m.reactions['heart'])) heartUsers = m.reactions['heart'];
-       }
-       const hasReaction = heartUsers.length > 0;
-       
-       div.className = `flex w-full ${hasReaction ? 'mb-6' : 'mb-1'} msg-row relative ${isMe ? 'justify-end' : 'justify-start'}`;
-       div.id = `msg-${m.id}`;
-       
-       let content = m.content || '';
-       if(m.is_deleted) { content = `<span class="italic text-gray-400 flex items-center gap-1 text-[13px]"><i class="ph-fill ph-prohibit"></i> Deleted</span>`; } 
-       else {
-           if(content) content = linkify(content);
-           
-           // === FIX 1: 'onclick' yahan se hata diya gaya hai ===
-           if(m.image_url) content = `<img src="${m.image_url}" class="rounded-lg max-w-[280px] w-full mb-1 cursor-pointer border border-white/10"><br>` + content;
-           
-           if(m.reply_to) {
-               content = `<div onclick="scrollToMessage('${m.reply_to.id}')" class="reply-box truncate">
-                   <div class="font-bold text-[#00a884] text-[10px] mb-0.5">Replying to</div>
-                   ${m.reply_to.text}
-               </div>` + content;
-           }
-           
-           if(m.is_forwarded) content = `<div class="text-[10px] text-gray-400 italic mb-1 flex items-center gap-1"><i class="ph-bold ph-share"></i> Forwarded</div>` + content;
-       }
-       
-       // === BLUE TICK FIX (CHANGE 1) ===
-       let senderName = '';
-       if(!isMe && state.activeChat.type === 'group' && m.sender) {
-           const colors = ['text-orange-400', 'text-blue-400', 'text-pink-400', 'text-purple-400', 'text-yellow-400'];
-           const color = colors[m.sender_id.charCodeAt(0) % colors.length];
-           const verifiedTick = m.sender.is_verified ? ' <i class="ph-fill ph-seal-check text-blue-400 text-xs inline-block"></i>' : '';
-           senderName = `<div class="text-xs ${color} font-bold mb-1 cursor-pointer hover:underline" onclick="viewUserProfileById('${m.sender_id}')">${m.sender.full_name || m.sender.username}${verifiedTick}</div>`;
-       }
-       // === END BLUE TICK FIX ===
-
-       const time = new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-       const checks = isMe && !m.is_deleted ? `<i class="ph-bold ph-checks ${m.status==='read' ? 'text-blue-400' : 'text-gray-500'} ml-1"></i>` : '';
-       
-       let reactionHTML = '';
-       if (hasReaction) {
-           const count = heartUsers.length;
-           const countText = count > 1 ? `<span class="ml-1 text-[10px] font-bold app-text">${count}</span>` : '';
-           reactionHTML = `<div class="reaction-badge"><span class="text-xs text-red-500">❤️</span>${countText}</div>`;
-       }
-
-       div.innerHTML = `
-         <div class="max-w-[85%] md:max-w-[60%] px-3 py-1.5 ${isMe ? 'bubble-out' : 'bubble-in'} shadow-sm relative group touch-pan-y select-none text-sm app-text">
-            ${senderName}
-            <div class="text-[15px] leading-snug break-words msg-text">${content}</div>
-            <div class="text-[10px] app-subtext text-right mt-1 flex justify-end items-center gap-1 msg-meta min-w-[50px]">${time}${checks}</div>
-            ${reactionHTML}
-         </div>`;
+      // === HELPERS ===
+      function showToast(msg, isError = false) {
+        const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg;
+        t.style.backgroundColor = isError ? '#ef4444' : 'var(--bg-header)'; 
+        t.classList.remove('hidden', 'translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('hidden'), 3000);
+      }
+      
+      function getSmartDate(dateStr) {
+         const d = new Date(dateStr); 
+         const now = new Date();
+         // Time format (e.g., 11:30 AM)
+         const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
          
-       // === FIX 2: Naya event listener code yahan add kiya gaya hai ===
-       const imgEl = div.querySelector('.msg-text img'); // Image element ko dhundho
-       if (imgEl) {
-           // Ye 'click' listener modal kholega
-           imgEl.addEventListener('click', (e) => {
-               e.stopPropagation(); // Click event ko bubble (upar) hone se roko
-               openImageViewer(imgEl.src);
-           });
-           
-           // Ye 'touchstart' ko bubble hone se rokega (taaki long-press menu na khule)
-           imgEl.addEventListener('touchstart', (e) => {
-               e.stopPropagation();
-           });
-       }
-       // === FIX END ===
-
-       let pressTimer;
-       div.addEventListener('touchstart', () => { pressTimer = setTimeout(() => openMsgOptions(m), 600); });
-       div.addEventListener('touchend', () => clearTimeout(pressTimer));
-       
-       const hammer = new Hammer(div);
-       hammer.on('swiperight', () => { 
-           if(!m.is_deleted) { 
-               state.replyTo = { id: m.id, text: m.content || 'Image' }; 
-               document.getElementById('reply-context').classList.remove('hidden'); 
-               document.getElementById('reply-text').textContent = "Replying to: " + state.replyTo.text; 
-               document.getElementById('msg-input').focus(); 
-               if(navigator.vibrate) navigator.vibrate(50); 
-           } 
-       });
-
-       hammer.on('doubletap', async () => {
-           if(m.is_deleted) return;
-           
-           const bubble = div.querySelector('.bubble-in, .bubble-out');
-           const container = div;
-           
-           const heartAnim = document.createElement('div');
-           heartAnim.innerHTML = '❤️';
-           heartAnim.className = 'absolute inset-0 flex items-center justify-center text-6xl animate-heart-beat pointer-events-none z-50';
-           bubble.appendChild(heartAnim);
-           setTimeout(() => heartAnim.remove(), 800);
-
-           let currentUsers = [];
-           if (m.reactions && Array.isArray(m.reactions['heart'])) {
-               currentUsers = [...m.reactions['heart']];
-           }
-           
-           const myIndex = currentUsers.indexOf(state.user.id);
-           if (myIndex > -1) {
-               currentUsers.splice(myIndex, 1);
-           } else {
-               currentUsers.push(state.user.id);
-           }
-           
-           const newReactions = m.reactions || {};
-           newReactions['heart'] = currentUsers;
-           
-           const newCount = currentUsers.length;
-           
-           if (newCount > 0) {
-               container.classList.remove('mb-1');
-               container.classList.add('mb-6');
-               
-               let existingBadge = bubble.querySelector('.reaction-badge');
-               const countHtml = newCount > 1 ? `<span class="ml-1 text-[10px] font-bold app-text">${newCount}</span>` : '';
-               
-               if(existingBadge) {
-                   existingBadge.innerHTML = `<span class="text-xs text-red-500">❤️</span>${countHtml}`;
-               } else {
-                   const badge = document.createElement('div');
-                   badge.className = 'reaction-badge';
-                   badge.innerHTML = `<span class="text-xs text-red-500">❤️</span>${countHtml}`;
-                   bubble.appendChild(badge);
-               }
-           } else {
-               container.classList.remove('mb-6');
-               container.classList.add('mb-1');
-               const existingBadge = bubble.querySelector('.reaction-badge');
-               if(existingBadge) existingBadge.remove();
-           }
-           
-           try {
-               await supabase.from('messages').update({ reactions: newReactions }).eq('id', m.id);
-           } catch(e) { console.error("Reactions update failed", e); }
-       });
-
-       area.appendChild(div);
-    }
-    // === FUNCTION UPDATE END ===
-
-    window.sendMessage = async function(url=null) {
-      const inp = document.getElementById('msg-input'); const txt = inp.value.trim();
-      if(!txt && !url) return;
-      inp.focus();
-      if(state.activeChat.type === 'dm') {
-          const { data: blocked } = await supabase.from('blocks').select('*').eq('blocker_id', state.activeChat.id).eq('blocked_id', state.user.id);
-          if(blocked && blocked.length > 0) return showToast("You are blocked by this user", true);
+         // Check if it's today
+         if (d.toDateString() === now.toDateString()) {
+             return `Today at ${time}`;
+         }
+         
+         const diff = now - d; 
+         const oneDay = 86400000;
+         
+         // Check if it's yesterday
+         if (diff < oneDay * 2 && d.getDate() !== now.getDate()) {
+             return `Yesterday at ${time}`;
+         }
+         
+         // Older than yesterday (e.g., 15 Nov at 10:00 AM)
+         const date = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+         return `${date} at ${time}`;
       }
-      if (state.activeChat.type === 'group') {
-          if (state.activeChat.is_locked && !state.activeChat.iAmAdmin) {
-              return showToast("Group is locked. Only admins can send messages.", true);
+      
+      // +++ YEH FUNCTION UPAR MOVE KIYA GAYA HAI +++
+      function linkify(text) {
+          const urlRegex = /(https?:\/\/[^\s]+)/g; 
+          return text.replace(urlRegex, (url) => {
+              return `<a href="${url}" target="_blank" class="text-blue-400 hover:underline cursor-pointer break-all relative z-10" onclick="event.stopPropagation()">${url}</a>`;
+          });
+      }
+
+      // +++ NAYA: FEED KO RANDOM KARNE KE LIYE SHUFFLE FUNCTION +++
+      function shuffleArray(array) {
+          for (let i = array.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [array[i], array[j]] = [array[j], array[i]];
+          }
+          return array;
+      }
+      // +++ NAYA TAB NAVIGATION LOGIC (UPDATE KIYA GAYA) +++
+      window.showTab = function(tabName) {
+        // Sabhi main views ko hide karein
+        document.getElementById('view-list').classList.add('hidden');
+        document.getElementById('view-feed').classList.add('hidden');
+        document.getElementById('view-profile').classList.add('hidden');
+        
+        // Sabhi nav buttons ko inactive (dull) karein
+        const navButtons = document.querySelectorAll('#bottom-nav button');
+        navButtons.forEach(btn => {
+          btn.classList.add('text-white/70');
+          btn.classList.remove('text-white');
+        });
+
+        // Sahi view ko show karein
+        if(tabName === 'feed') {
+          document.getElementById('view-feed').classList.remove('hidden');
+          // Feed button ko active karein
+          if (document.querySelector('#bottom-nav button:nth-child(1)')) {
+              document.querySelector('#bottom-nav button:nth-child(1)').classList.add('text-white');
+              document.querySelector('#bottom-nav button:nth-child(1)').classList.remove('text-white/70');
+          }
+          loadFeed(); // <-- YAHAN ADD KIYA GAYA
+        } 
+        else if(tabName === 'chat') {
+          document.getElementById('view-list').classList.remove('hidden');
+          // Jab chat view khule, toh feed button active dikhna chahiye
+          if (document.querySelector('#bottom-nav button:nth-child(1)')) {
+              document.querySelector('#bottom-nav button:nth-child(1)').classList.add('text-white');
+              document.querySelector('#bottom-nav button:nth-child(1)').classList.remove('text-white/70');
+          }
+        } 
+        else if(tabName === 'post') {
+          // Post modal ko kholein
+          document.getElementById('modal-create-post').classList.remove('hidden');
+          // Active button ko 'Post' par set karein (ab yeh 2nd button hai)
+          if (document.querySelector('#bottom-nav button:nth-child(2)')) {
+              document.querySelector('#bottom-nav button:nth-child(2)').classList.add('text-white');
+              document.querySelector('#bottom-nav button:nth-child(2)').classList.remove('text-white/70');
+          }
+        } 
+        else if(tabName === 'profile') {
+          document.getElementById('view-profile').classList.remove('hidden');
+          // Profile button ko active karein (ab yeh 3rd button hai)
+          if (document.querySelector('#bottom-nav button:nth-child(3)')) {
+              document.querySelector('#bottom-nav button:nth-child(3)').classList.add('text-white');
+              document.querySelector('#bottom-nav button:nth-child(3)').classList.remove('text-white/70');
+          }
+          
+          // Profile page par data load karein (NAYA: state.user.id ke saath)
+          loadProfilePage(state.user.id); 
+        }
+      }
+      
+      // Profile page ke liye NAYA (ASYNC) function
+      // Yeh ab kisi bhi user ki profile load kar sakta hai
+      async function loadProfilePage(userId) {
+          // Agar koi ID nahi di gayi, toh apni profile dikhayein
+          if (!userId) {
+              if (!state.profile) return; // Agar logged in nahi hain toh exit
+              userId = state.user.id;
+          }
+          
+          const isMyProfile = (userId === state.user.id);
+
+          // 1. Profile ki basic info fetch karein
+          const { data: profileData, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+          if (error || !profileData) {
+              console.error('Error loading profile data:', error);
+              showToast("Could not load profile", true);
+              return;
+          }
+          
+          // REPLACE WITH THIS:
+// 2. UI par basic info set karein (UPDATED)
+          
+          // Naye header elements ko target karein
+          document.getElementById('profile-page-fullname').textContent = profileData.full_name || profileData.username;
+          
+          // Blue tick ko show/hide karein
+          const verifiedBadge = document.getElementById('profile-page-verified');
+          if (profileData.is_verified) {
+              verifiedBadge.classList.remove('hidden');
+          } else {
+              verifiedBadge.classList.add('hidden');
+          }
+
+          // Baaki profile info jaise thi waise hi set karein
+          document.getElementById('profile-page-avatar').src = profileData.avatar_url;
+          document.getElementById('profile-page-name').textContent = profileData.full_name;
+          document.getElementById('profile-page-about').textContent = profileData.about || '...';
+
+          // Purani 'profile-page-username' line ki ab zaroorat nahi hai
+          
+          // 3. Buttons ko Show/Hide karein
+          const btnEdit = document.getElementById('btn-edit-profile');
+          const btnFollow = document.getElementById('btn-follow');
+          const btnMessage = document.getElementById('btn-message');
+
+          if (isMyProfile) {
+              btnEdit.classList.remove('hidden');
+              btnFollow.classList.add('hidden');
+              btnMessage.classList.add('hidden');
+          } else {
+              btnEdit.classList.add('hidden');
+              btnFollow.classList.remove('hidden');
+              btnMessage.classList.remove('hidden');
+              
+              // NAYA: Check if already following
+              const { data: followCheck } = await supabase
+                  .from('followers')
+                  .select('id')
+                  .eq('follower_id', state.user.id)
+                  .eq('following_id', userId)
+                  .maybeSingle();
+
+              if (followCheck) {
+                  btnFollow.textContent = 'Following';
+                  btnFollow.dataset.following = 'true';
+                  btnFollow.classList.add('bg-gray-500', 'text-white'); // Different style for 'Following'
+                  btnFollow.classList.remove('bg-[#00a884]');
+              } else {
+                  btnFollow.textContent = 'Follow';
+                  btnFollow.dataset.following = 'false';
+                  btnFollow.classList.remove('bg-gray-500', 'text-white');
+                  btnFollow.classList.add('bg-[#00a884]');
+              }
+              
+              // NAYA: Follow button ka logic
+              btnFollow.onclick = () => handleFollowToggle(userId);
+              
+              // Message button ka logic (existing)
+              btnMessage.onclick = () => {
+                  showTab('chat'); 
+                  setTimeout(() => {
+                      openChat(profileData, 'dm');
+                  }, 100);
+              };
+          }
+
+          // 4. Grid ko reset karein
+          const grid = document.getElementById('profile-posts-grid');
+          const placeholder = document.getElementById('profile-posts-placeholder');
+          grid.innerHTML = ''; 
+          let currentPlaceholder = placeholder || document.createElement('p');
+          if(!placeholder) {
+              currentPlaceholder.id = 'profile-posts-placeholder';
+              currentPlaceholder.className = 'app-subtext text-center col-span-3';
+          }
+          grid.appendChild(currentPlaceholder); 
+          currentPlaceholder.textContent = 'Loading posts...';
+          currentPlaceholder.classList.remove('hidden');
+
+          // 5. Counts (gin-tee) Fetch karein
+          try {
+              // (A) Posts ki gin-tee aur posts fetch karein
+              const { data: posts, error: postError, count: postCount } = await supabase
+                  .from('posts')
+                  .select('*', { count: 'exact' }) 
+                  .eq('user_id', userId)
+                  .order('created_at', { ascending: false });
+
+              // (B) Followers ki gin-tee fetch karein (REAL)
+              const { count: followersCount } = await supabase
+                  .from('followers')
+                  .select('id', { count: 'exact' })
+                  .eq('following_id', userId); 
+
+              // (C) Following ki gin-tee fetch karein (REAL)
+              const { count: followingCount } = await supabase
+                  .from('followers')
+                  .select('id', { count: 'exact' })
+                  .eq('follower_id', userId); 
+
+              // 6. UI par Counts update karein
+              document.getElementById('profile-posts-count').textContent = postCount || 0;
+              document.getElementById('profile-followers-count').textContent = followersCount || 0;
+              document.getElementById('profile-following-count').textContent = followingCount || 0;
+
+              // 7. Posts ko Grid mein dikhayein
+              if (posts && posts.length > 0) {
+                  currentPlaceholder.classList.add('hidden'); 
+                  posts.forEach(post => {
+                      const postEl = document.createElement('div');
+                      postEl.className = 'w-full aspect-square bg-gray-700 cursor-pointer'; // NAYA: cursor-pointer
+                      postEl.innerHTML = `<img src="${post.image_url}" class="w-full h-full object-cover" loading="lazy">`;
+                      // NAYA: onclick add kiya gaya
+                      postEl.onclick = () => openPostView(post.id);
+                      grid.appendChild(postEl);
+                  });
+              } else {
+                  currentPlaceholder.textContent = isMyProfile ? 'Aapke posts yahan dikhenge...' : 'No posts yet!';
+                  currentPlaceholder.classList.remove('hidden');
+              }
+
+          } catch (err) {
+              console.error('Error loading profile details:', err);
+              currentPlaceholder.textContent = 'Error loading posts.';
+              currentPlaceholder.classList.remove('hidden');
           }
       }
-      const payload = { sender_id: state.user.id, content: txt, image_url: url, reply_to: state.replyTo, is_forwarded: !!state.forwardContent, reactions: {} };
-      if(state.activeChat.type === 'dm') payload.receiver_id = state.activeChat.id; else payload.group_id = state.activeChat.id;
-      inp.value = ''; cancelReply(); cancelForward(); 
-      const { error } = await supabase.from('messages').insert(payload);
-      if(error) showToast('Failed to send'); else { 
-          if(state.activeChat.type === 'dm') localStorage.removeItem(`chat_deleted_${state.activeChat.id}`); 
-          setTimeout(() => {
-              const area = document.getElementById('messages-area');
-              area.scrollTop = area.scrollHeight;
-          }, 100);
+      // +++ Tab Logic Yahan Khatm Hota Hai +++
+
+      // +++ NAYA FEED LOADING FUNCTION (Upgraded) +++
+      async function loadFeed() {
+          const feedContainer = document.getElementById('feed-container');
+          feedContainer.innerHTML = '<p class="app-subtext text-center mt-10 p-4">Loading feed...</p>'; 
+
+          // NAYA: 'posts' ke saath unke profile, likes, aur comments bhi fetch karein
+          // .order() ko hata diya hai aur limit badha di hai
+          let { data, error } = await supabase
+              .from('posts')
+              .select('*, profiles ( id, username, avatar_url, full_name, is_verified ), post_likes ( user_id ), post_comments ( id )')
+              // .order('created_at', { ascending: false }) // <-- YEH LINE HATA DI
+              .limit(50); // Thode aur post fetch karein taaki random feed acchi lage
+
+          if (error) {
+              console.error('Error loading feed:', error);
+              feedContainer.innerHTML = `<p class="app-subtext text-center mt-10 p-4 text-red-400">Error: ${error.message}</p>`;
+              return;
+          }
+          if (!data || data.length === 0) {
+              feedContainer.innerHTML = '<p class="app-subtext text-center mt-10 p-4">No posts yet. Be the first!</p>';
+              return;
+          }
+          
+          // +++ NAYA: FEED KO SHUFFLE KAREIN +++
+          data = shuffleArray(data);
+
+          feedContainer.innerHTML = ''; 
+
+          data.forEach(post => {
+              if (!post.profiles) return; 
+
+              const postCard = document.createElement('div');
+              postCard.className = 'w-full app-modal border-b app-border mb-4'; 
+
+              const profile = post.profiles; 
+              const postTime = new Date(post.created_at).toLocaleDateString(); 
+              
+              // NAYA: Like aur Comment counts
+              const likeCount = post.post_likes.length;
+              const commentCount = post.post_comments.length;
+              // Check karein ki current user ne like kiya hai ya nahi
+              const userHasLiked = post.post_likes.some(like => like.user_id === state.user.id);
+              const likeIconClass = userHasLiked ? 'ph-fill ph-heart text-red-500' : 'ph-bold ph-heart';
+
+              postCard.innerHTML = `
+                  <!-- Post Header (Clickable) -->
+                  <div class="flex items-center gap-3 p-3">
+                      <img src="${profile.avatar_url}" class="w-9 h-9 rounded-full object-cover bg-gray-700 cursor-pointer" onclick="showUserProfile('${profile.id}')">
+                      <div class="cursor-pointer" onclick="showUserProfile('${profile.id}')">
+                          <span class="font-bold text-sm app-text flex items-center gap-1">
+                              ${profile.full_name || profile.username}
+                              ${profile.is_verified ? '<i class="ph-fill ph-seal-check text-blue-400 text-sm"></i>' : ''}
+                          </span>
+                          <span class="text-xs app-subtext">${postTime}</span>
+                      </div>
+                      <button id="post-options-btn-${post.id}" class="ml-auto app-subtext"><i class="ph-bold ph-dots-three-outline"></i></button>
+                  </div>
+                  
+                  <!-- Post Image -->
+                  <img src="${post.image_url}" class="w-full h-auto max-h-[70vh] object-cover" loading="lazy">
+                  
+                  <!-- NAYA: Post Actions (with onclick) -->
+                  <div class="flex items-center gap-4 p-3 text-2xl app-text">
+                      <button onclick="handleLikeToggle(event, '${post.id}', '${post.user_id}')
+"><i class="${likeIconClass}"></i></button>
+                      <button onclick="openComments('${post.id}')"><i class="ph-bold ph-chat-circle-dots"></i></button>
+                      <button onclick="openShareModal('${post.id}')"><i class="ph-bold ph-paper-plane-tilt"></i></button>
+                      <button class="ml-auto"><i class="ph-bold ph-bookmark-simple"></i></button>
+                  </div>
+                  
+                  <!-- NAYA: Like aur Comment counts -->
+                  <div class="px-3 pb-2 text-sm app-text">
+                      <span id="like-count-${post.id}" class="font-bold">${likeCount}</span> likes
+                  </div>
+                  
+                  <!-- Post Caption (Clickable username) -->
+                  <div class="px-3 pb-2 text-sm app-text">
+                      <p>
+                          <span class="font-bold cursor-pointer hover:underline" onclick="showUserProfile('${profile.id}')">${profile.full_name}</span>
+                          ${post.caption ? linkify(post.caption.replace(/\n/g, '')) : ''}
+                      </p>
+                  </div>
+
+                  <!-- NAYA: View Comments Link -->
+                  ${commentCount > 0 ? `
+                  <div class="px-3 pb-4 text-sm app-subtext cursor-pointer" onclick="openComments('${post.id}')">
+                      View all ${commentCount} comments
+                  </div>` : `
+                  <div class="px-3 pb-4 text-sm app-subtext cursor-pointer" onclick="openComments('${post.id}')">
+                      Add a comment...
+                  </div>`
+                  }
+              `;
+              
+              
+              // NAYA: Post options button ke liye listener add karein
+              const postOptionsBtn = postCard.querySelector(`#post-options-btn-${post.id}`);
+              if (post.user_id === state.user.id) {
+                  // Sirf agar yeh user ka apna post hai, tabhi button ko clickable banayein
+                  postOptionsBtn.onclick = (event) => openPostOptions(event, post);
+              } else {
+                  // Agar user ka post nahi hai, toh button ko hide kar dein
+                  postOptionsBtn.classList.add('hidden');
+              }
+              
+              feedContainer.appendChild(postCard);
+          });
       }
-    }
-    
-    window.cancelReply = function() { state.replyTo = null; document.getElementById('reply-context').classList.add('hidden'); }
-    window.cancelForward = function() { state.forwardContent = null; document.getElementById('forward-indicator').classList.add('hidden'); }
-    window.handleBlock = function() { const key = `blocked_${state.activeChat.id}`; if(localStorage.getItem(key)) { localStorage.removeItem(key); showToast("Unblocked"); } else { localStorage.setItem(key, 'true'); showToast("Blocked"); } openChat(state.activeChat, 'dm'); }
-    window.handleBlockLeave = async function() { if(state.activeChat.type === 'dm') handleBlock(); else { if(confirm("Leave this group?")) { await supabase.from('group_members').delete().eq('group_id', state.activeChat.id).eq('user_id', state.user.id); closeChat(); showToast("You left"); } } }
-    window.openImageViewer = function(src) { document.getElementById('full-image').src = src; document.getElementById('modal-image-viewer').classList.remove('hidden'); }
-
-    window.initCropperUpload = function(context) { currentCropContext = context; document.getElementById('upload-input-hidden').click(); }
-    window.handleFileSelect = function(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function (e) { const img = document.getElementById('cropper-img'); img.src = e.target.result; document.getElementById('modal-cropper').classList.remove('hidden'); if(cropper) cropper.destroy(); cropper = new Cropper(img, { aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 1, background: false }); }; reader.readAsDataURL(input.files[0]); } input.value = ''; }
-    window.closeCropper = function() { document.getElementById('modal-cropper').classList.add('hidden'); if(cropper) { cropper.destroy(); cropper = null; } }
-    
-    window.saveCroppedImage = function() { 
-        if(!cropper) return; 
-        showToast("Processing..."); 
-        cropper.getCroppedCanvas({ width: 500, height: 500 }).toBlob(async (blob) => { 
-            closeCropper(); 
-            // 'screenshot' context REMOVED. It will now only upload for profile/group.
-            await uploadToImgBB(blob); 
-        }); 
-    }
-    
-    async function uploadToImgBB(blob) { const fd = new FormData(); fd.append('image', blob, 'cropped.jpg'); showToast("Uploading..."); try { const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: 'POST', body: fd }); const d = await r.json(); if(d.success) { const url = d.data.url; if (currentCropContext === 'profile') { document.getElementById('profile-edit-img').src = url; } else if (currentCropContext === 'group') { state.createGroupImg = url; document.getElementById('group-create-img').src = url; } else if (currentCropContext === 'group_edit') { document.getElementById('group-edit-img').src = url; } showToast("Image uploaded!"); } else { showToast("Upload failed", true); } } catch(e) { showToast("Error uploading", true); } }
-    window.uploadImage = async function(inp) { const f = inp.files[0]; if(!f) return; const fd = new FormData(); fd.append('image', f); showToast("Uploading..."); try { const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,{method:'POST',body:fd}); const d = await r.json(); if(d.success) await sendMessage(d.data.url); } catch(e){} }
-
-    window.openCreateGroup = function() { document.getElementById('modal-create-group').classList.remove('hidden'); loadGroupUsers(); }
-    window.loadGroupUsers = async function() { const list = document.getElementById('group-users-list'); list.innerHTML = 'Loading...'; const { data } = await supabase.from('profiles').select('*').neq('id', state.user.id); list.innerHTML = ''; selectedGroupMembers.clear(); data.forEach(u => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-2 app-input rounded-lg mb-2 cursor-pointer border border-transparent'; d.innerHTML = `<img src="${u.avatar_url}" class="w-8 h-8 rounded-full"><span class="app-text flex-1">${u.full_name}</span><div id="chk-${u.id}" class="w-5 h-5 rounded-full border border-gray-500"></div>`; d.onclick = () => { if(selectedGroupMembers.has(u.id)) { selectedGroupMembers.delete(u.id); d.style.borderColor='transparent'; d.querySelector(`#chk-${u.id}`).style.backgroundColor='transparent'; } else { selectedGroupMembers.add(u.id); d.style.borderColor='#00a884'; d.querySelector(`#chk-${u.id}`).style.backgroundColor='#00a884'; } }; list.appendChild(d); }); }
-    window.createGroup = async function() { const name = document.getElementById('group-name').value; if(!name || !selectedGroupMembers.size) return showToast("Name & Members needed", true); const { data: g, error } = await supabase.from('groups').insert({ name, created_by: state.user.id, avatar_url: state.createGroupImg }).select().single(); if(error) return showToast(error.message, true); const members = Array.from(selectedGroupMembers).map(uid => ({ group_id: g.id, user_id: uid, is_admin: false })); members.push({ group_id: g.id, user_id: state.user.id, is_admin: true }); await supabase.from('group_members').insert(members); document.getElementById('modal-create-group').classList.add('hidden'); showToast("Group Created"); loadRecentChats(); }
-
-    window.toggleChatMenu = function() { document.getElementById('chat-menu-dropdown').classList.toggle('hidden'); }
-    window.clearChat = function() { if(confirm("Clear chat?")) { localStorage.setItem(`cleared_${state.activeChat.id}`, Date.now()); loadMessages(); toggleChatMenu(); } }
-    
-    // === BLUE TICK FIX (CHANGE 2) ===
-    function setupChatListener() { 
-        if(state.chatSub) supabase.removeChannel(state.chatSub); 
-        state.chatSub = supabase.channel('chat')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async p => { // <-- 'async' add kiya hai
-            if(p.eventType === 'INSERT') { 
-                let m = p.new; // <-- 'const' se 'let' kiya hai
-                if((state.activeChat.type === 'group' && m.group_id === state.activeChat.id) || 
-                   (state.activeChat.type === 'dm' && (m.sender_id === state.activeChat.id || m.receiver_id === state.activeChat.id || m.sender_id === state.user.id))) { 
-                    
-                    // === FIX: Naye message ke liye sender info fetch karein ===
-                    if (state.activeChat.type === 'group' && m.sender_id !== state.user.id && !m.sender) {
-                         const { data: senderData } = await supabase
-                            .from('profiles')
-                            .select('username, full_name, is_verified') // is_verified yahaan add kiya hai
-                            .eq('id', m.sender_id)
-                            .single();
-                        
-                        if (senderData) {
-                            m.sender = senderData; // Sender info ko message object se jod dein
-                        }
-                    }
-                    // === END FIX ===
-
-                    renderMessage(m); 
-                    setTimeout(() => {
-                        const area = document.getElementById('messages-area');
-                        area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
-                    }, 50); 
-                } 
-            } else if(p.eventType === 'UPDATE') { 
-                // Handle reactions/edits
-            } 
-        }).subscribe(); 
-    }
-    // === END BLUE TICK FIX ===
-
-    function setupGlobalListener() { supabase.channel('global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { if(p.new.receiver_id === state.user.id) showToast("New Message"); loadRecentChats(); }).subscribe(); }
-
-    // === BLUE TICK LOGIC (MODIFIED) ===
-    window.openBlueTickModal = async function() {
-        document.getElementById('modal-settings').classList.add('hidden');
-        
-        if (state.profile.is_verified) {
-             document.getElementById('blue-tick-status-button').innerHTML = `
-                <div class="flex items-center gap-3">
-                   <i class="ph-fill ph-seal-check text-xl text-blue-400"></i>
-                   <span class="app-text">Verified</span>
-                </div>
-                <i class="ph-fill ph-seal-check text-blue-400"></i>`;
-             document.getElementById('blue-tick-status-button').onclick = null;
-             return;
-        }
-        
-        // Removed the check for 'verification_requests' table
-        // Now it just opens the modal
-        document.getElementById('modal-blue-tick').classList.remove('hidden');
-    }
-
-    // 'submitVerificationRequest' function REMOVED
-    
-    // === END BLUE TICK LOGIC ===
+      // +++ FEED FUNCTION YAHAN KHATM HOTA HAI +++
 
 
-    window.toggleSearchMode = function() { document.getElementById('search-bar-container').classList.remove('hidden'); document.getElementById('user-search').focus(); }
-    window.closeSearchMode = function() { document.getElementById('search-bar-container').classList.add('hidden'); loadRecentChats(); }
-    window.handleSearchKeyUp = function(e) { if(e.key==='Enter') performSearch(); }
-    window.performSearch = async function() { const q = document.getElementById('user-search').value; if(!q) return; const { data } = await supabase.from('profiles').select('*').neq('id', state.user.id).or(`username.ilike.%${q}%,full_name.ilike.%${q}%`); const el = document.getElementById('chat-list-container'); el.innerHTML = ''; if(data) data.forEach(u => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-3 hover:bg-black/5 cursor-pointer'; d.innerHTML = `<img src="${u.avatar_url}" class="w-10 h-10 rounded-full"><div class="flex-1 app-text">${u.full_name}</div>`; d.onclick = () => { closeSearchMode(); openChat(u, 'dm'); }; el.appendChild(d); }); }
-
-    window.openProfileEdit = function() { document.getElementById('modal-profile-edit').classList.remove('hidden'); document.getElementById('profile-name').value=state.profile.full_name; document.getElementById('profile-about').value=state.profile.about; document.getElementById('profile-edit-img').src=state.profile.avatar_url; }
-    window.saveProfile = async function() { const updates = { full_name: document.getElementById('profile-name').value, about: document.getElementById('profile-about').value, avatar_url: document.getElementById('profile-edit-img').src }; const { error } = await supabase.from('profiles').update(updates).eq('id', state.user.id); if(!error) { state.profile = {...state.profile, ...updates}; document.getElementById('my-avatar').src=updates.avatar_url; document.getElementById('modal-profile-edit').classList.add('hidden'); showToast('Saved'); } }
-    window.uploadProfilePic = function(inp) { handleFileSelect(inp); }
-
-    window.viewUserProfileById = async function(uid) { 
-        document.getElementById('modal-user-view').classList.remove('hidden'); 
-        document.getElementById('btn-edit-group').classList.add('hidden'); 
-        document.getElementById('view-user-info').classList.add('hidden'); 
-        document.getElementById('group-info-extra').classList.add('hidden'); 
-        document.getElementById('view-action-btn').classList.add('hidden'); 
-        const { data: u } = await supabase.from('profiles').select('*').eq('id', uid).single(); 
-        if(u) { 
-            state.viewedUserProfile = u; 
-            document.getElementById('view-avatar').src = u.avatar_url; 
-            
-            document.getElementById('view-name').innerHTML = `${u.full_name} ${u.is_verified ? '<i class="ph-fill ph-seal-check text-blue-400 text-xl inline-block"></i>' : ''}`;
-            
-            document.getElementById('view-username').textContent = '@' + u.username; 
-            document.getElementById('view-about').textContent = u.about; 
-            document.getElementById('view-user-info').classList.remove('hidden'); 
-            if(u.id !== state.user.id) document.getElementById('view-action-btn').classList.remove('hidden'); 
-        } 
-    }
-    window.startDirectChat = function() { document.getElementById('modal-user-view').classList.add('hidden'); openChat(state.viewedUserProfile, 'dm'); }
-    window.openWallpaperModal = function() { document.getElementById('modal-wallpaper').classList.remove('hidden'); toggleChatMenu(); }
-    window.setWallpaper = function(val) { const bg = val === 'default' ? "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')" : val; document.querySelector('.chat-bg').style.backgroundImage = bg; if(state.activeChat) localStorage.setItem(`chat_bg_${state.activeChat.id}`, val); document.getElementById('modal-wallpaper').classList.add('hidden'); }
-    window.openMsgOptions = function(msg) { state.selectedMsg = msg; document.getElementById('msg-options-overlay').classList.remove('hidden'); if(msg.sender_id === state.user.id) document.getElementById('btn-delete-everyone').classList.remove('hidden'); else document.getElementById('btn-delete-everyone').classList.add('hidden'); }
-    window.closeMsgOptions = function() { document.getElementById('msg-options-overlay').classList.add('hidden'); }
-    window.handleMsgAction = async function(action) { closeMsgOptions(); const m = state.selectedMsg; if(action === 'reply') { state.replyTo = { id: m.id, text: m.content || 'Media' }; document.getElementById('reply-context').classList.remove('hidden'); document.getElementById('reply-text').textContent = "Replying to: " + state.replyTo.text; } else if(action === 'copy') { navigator.clipboard.writeText(m.content || ''); showToast('Copied'); } else if(action === 'delete_me') { localStorage.setItem(`del_me_${m.id}`, true); loadMessages(); } else if(action === 'delete_everyone') { if(confirm('Delete for everyone?')) await supabase.from('messages').update({ is_deleted: true, content: null, image_url: null }).eq('id', m.id); } else if(action === 'forward') { openForwardModal(m.content || (m.image_url ? 'Image' : '')); } }
-    window.openForwardModal = function(content) { state.forwardContent = content; document.getElementById('modal-forward').classList.remove('hidden'); loadForwardList(); }
-    window.loadForwardList = async function() { const el = document.getElementById('forward-list'); el.innerHTML = 'Loading...'; const { data } = await supabase.from('profiles').select('*').neq('id', state.user.id); el.innerHTML = ''; data.forEach(u => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-3 border-b app-border app-text cursor-pointer'; d.innerHTML = `<img src="${u.avatar_url}" class="w-10 h-10 rounded-full"><span class="flex-1">${u.full_name}</span><button class="bg-[#00a884] text-white px-3 py-1 rounded-full text-xs font-bold">Send</button>`; d.onclick = async () => { if(confirm(`Forward to ${u.full_name}?`)) { await supabase.from('messages').insert({ sender_id: state.user.id, receiver_id: u.id, content: state.forwardContent, is_forwarded: true }); showToast('Sent'); document.getElementById('modal-forward').classList.add('hidden'); } }; el.appendChild(d); }); }
-    window.closeForwardModal = function() { document.getElementById('modal-forward').classList.add('hidden'); }
-    
-    function renderGroupEditModal() { document.getElementById('group-edit-name').value = state.activeChat.name; document.getElementById('group-edit-img').src = state.activeChat.avatar_url || 'https://i.ibb.co/HpDV8hX/group-placeholder.png'; const lockBtn = document.getElementById('btn-lock-group'); const lockBtnIcon = lockBtn.querySelector('i'); const lockBtnText = lockBtn.querySelector('span'); if (state.activeChat.is_locked) { lockBtnText.textContent = 'Unlock Group'; lockBtnIcon.className = 'ph-bold ph-lock-open'; lockBtn.classList.add('text-[#00a884]', 'border-[#00a884]'); } else { lockBtnText.textContent = 'Lock Group'; lockBtnIcon.className = 'ph-bold ph-lock'; lockBtn.classList.remove('text-[#00a884]', 'border-[#00a884]'); } }
-    async function toggleGroupLock() { const newLockStatus = !state.activeChat.is_locked; const { error } = await supabase.from('groups').update({ is_locked: newLockStatus }).eq('id', state.activeChat.id); if (!error) { state.activeChat.is_locked = newLockStatus; renderGroupEditModal(); showToast(newLockStatus ? 'Group is now locked (Admin Only).' : 'Group is now unlocked.'); } else { console.error('Lock toggle failed:', error); } }
-    window.openGroupEditModal = function() { document.getElementById('modal-user-view').classList.add('hidden'); document.getElementById('modal-group-edit').classList.remove('hidden'); renderGroupEditModal(); renderInviteCodeUI(); loadGroupEditMembers(); }
-    window.loadGroupEditMembers = async function() { const listEl = document.getElementById('group-edit-members-list'); listEl.innerHTML = ''; const { data: memberLinks } = await supabase.from('group_members').select('user_id, is_admin').eq('group_id', state.activeChat.id); if (!memberLinks) return; const userIds = memberLinks.map(m => m.user_id); const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds); if (!profiles) return; state.activeChat.allMembers = profiles.map(p => ({ ...p, is_admin: memberLinks.find(m => m.user_id === p.id)?.is_admin || false })); state.activeChat.allMembers.forEach(p => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-2 rounded-lg'; let actions = ''; if (p.id !== state.user.id) { actions = `<button onclick="openMemberOptions('${p.id}', ${p.is_admin}, '${p.full_name}')" class="ml-auto p-2 app-subtext"><i class="ph-bold ph-dots-three-vertical"></i></button>`; } d.innerHTML = `<img src="${p.avatar_url}" class="w-8 h-8 rounded-full object-cover"><span class="flex-1 app-text">${p.full_name} ${p.id === state.user.id ? '(You)' : ''}</span>${p.is_admin ? '<span class="text-xs text-[#00a884] font-bold">Admin</span>' : ''}${actions}`; listEl.appendChild(d); }); }
-    window.uploadGroupEditIcon = function(inp) { handleFileSelect(inp); }
-    window.saveGroupChanges = async function() { const newName = document.getElementById('group-edit-name').value; const newIcon = document.getElementById('group-edit-img').src; if (!newName) return showToast("Group name can't be empty", true); const { error } = await supabase.from('groups').update({ name: newName, avatar_url: newIcon }).eq('id', state.activeChat.id); if (error) { showToast("Error saving: " + error.message, true); } else { showToast("Group info saved!"); state.activeChat.name = newName; state.activeChat.avatar_url = newIcon; document.getElementById('chat-user-name').textContent = newName; document.getElementById('chat-user-avatar').src = newIcon; document.getElementById('modal-group-edit').classList.add('hidden'); loadRecentChats(); } }
-    window.openMemberOptions = function(userId, isCurrentlyAdmin, userName) { state.selectedMemberForAction = userId; document.getElementById('member-options-name').textContent = `Manage ${userName}`; if (isCurrentlyAdmin) { document.getElementById('btn-promote-admin').classList.add('hidden'); document.getElementById('btn-dismiss-admin').classList.remove('hidden'); } else { document.getElementById('btn-promote-admin').classList.remove('hidden'); document.getElementById('btn-dismiss-admin').classList.add('hidden'); } document.getElementById('member-options-overlay').classList.remove('hidden'); }
-    window.handleMemberAction = async function(action) { const userId = state.selectedMemberForAction; const groupId = state.activeChat.id; if (!userId) return; document.getElementById('member-options-overlay').classList.add('hidden'); let error = null; if (action === 'promote') { ({ error } = await supabase.from('group_members').update({ is_admin: true }).eq('group_id', groupId).eq('user_id', userId)); if (!error) showToast("Promoted to admin"); } else if (action === 'demote') { ({ error } = await supabase.from('group_members').update({ is_admin: false }).eq('group_id', groupId).eq('user_id', userId)); if (!error) showToast("Dismissed as admin"); } else if (action === 'remove') { if (confirm("Remove this user from the group?")) { ({ error } = await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId)); if (!error) showToast("User removed"); } } if (error) { showToast("Error: " + error.message, true); } else { loadGroupEditMembers(); } state.selectedMemberForAction = null; }
-    
-    window.openJoinGroupModal = function() { document.getElementById('modal-join-group').classList.remove('hidden'); }
-    window.handleJoinGroup = async function() { const code = document.getElementById('join-code-input').value.trim(); if (!code) return showToast("Please enter a code", true); await joinGroupWithCode(code); document.getElementById('join-code-input').value = ''; document.getElementById('modal-join-group').classList.add('hidden'); }
-    async function joinGroupWithCode(inviteCode) { if (!inviteCode) return; showToast("Checking invite code..."); const { data: group, error } = await supabase.from('groups').select('id').eq('invite_code', inviteCode).single(); if (error || !group) { return showToast("Invalid or expired invite code.", true); } const { data: existing } = await supabase.from('group_members').select('user_id').eq('group_id', group.id).eq('user_id', state.user.id).maybeSingle(); if (existing) { return showToast("You are already in this group."); } const { error: insertError } = await supabase.from('group_members').insert({ group_id: group.id, user_id: state.user.id, is_admin: false }); if (insertError) { return showToast("Failed to join group: " + insertError.message, true); } showToast("Successfully joined group!"); loadRecentChats(); }
-    function renderInviteCodeUI() { const controls = document.getElementById('invite-link-controls'); const code = state.activeChat.invite_code; if (code) { controls.innerHTML = `<input type="text" readonly value="${code}" class="w-full app-input app-text p-2 rounded border app-border text-xs"><div class="flex gap-2 mt-2"><button onclick="copyInviteCode()" class="flex-1 app-input py-2 rounded text-[#00a884] text-sm">Copy Code</button><button onclick="generateInviteLink(true)" class="flex-1 bg-[#2a1f1f] text-red-400 py-2 rounded text-sm">Reset</button></div>`; } else { controls.innerHTML = `<button onclick="generateInviteLink(false)" class="w-full app-input py-2 rounded text-[#00a884] text-sm">Generate Invite Code</button>`; } }
-    async function generateInviteLink(isResetting = false) { const newCode = self.crypto.randomUUID(); const { data, error } = await supabase.from('groups').update({ invite_code: newCode }).eq('id', state.activeChat.id).select().single(); if (error) { showToast("Error generating code: " + error.message, true); } else { state.activeChat.invite_code = newCode; renderInviteCodeUI(); showToast(isResetting ? "Code reset" : "Code generated"); } }
-    function copyInviteCode() { if (!state.activeChat.invite_code) return; const code = state.activeChat.invite_code; navigator.clipboard.writeText(code).then(() => { showToast("Invite Code Copied!"); }); }
-
-    document.getElementById('msg-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+      // +++ YEH NAYA FUNCTION HAI DOOSRE USERS KI PROFILE DEKHNE KE LIYE +++
+      window.showUserProfile = function(userId) {
+          // 'view-profile' div ko dikhayein
+          document.getElementById('view-profile').classList.remove('hidden');
+          
+          // Doosre sabhi main views ko hide karein
+          document.getElementById('view-list').classList.add('hidden');
+          document.getElementById('view-feed').classList.add('hidden');
+          
+          // Profile data load karein uss user ID ke liye
+          loadProfilePage(userId);
+          
+          // Saare nav buttons ko inactive karein
+          const navButtons = document.querySelectorAll('#bottom-nav button');
+          navButtons.forEach(btn => {
+            btn.classList.add('text-white/70');
+            btn.classList.remove('text-white');
+          });
+          // Home button ko active dikhayein, kyunki hum feed se aaye hain
+          document.querySelector('#bottom-nav button:nth-child(1)').classList.add('text-white');
+          document.querySelector('#bottom-nav button:nth-child(1)').classList.remove('text-white/70');
+      }
 
 
-    // === PUSH NOTIFICATION LOGIC ===
-
-    // VAPID Public Key ko yahaan paste karein (Step 1 se)
-    const VAPID_PUBLIC_KEY = "BEExmrHoA5hPuHyL4M4Tp1cUT4V-XnP5NQQQE4IJiRGYtVsmTuV7-qf9Y--cPzOtnDuI1LMSX5kvE5CcOEPuZK8";
-
-    // Standard function to convert Base64 string
-    function urlBase64ToUint8Array(base64String) {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-    }
-
-    async function subscribeToPushNotifications() {
-        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-            console.log("Push notifications are not supported.");
-            return;
-        }
-
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            console.log("Notification permission not granted.");
-            return;
-        }
-
-        const reg = await navigator.serviceWorker.ready;
-        let subscription = await reg.pushManager.getSubscription();
-
-        if (subscription === null) {
-            // User abhi tak subscribed nahi hai, naya subscription banayein
-            console.log("Subscribing to push...");
-            try {
-                subscription = await reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                });
-                console.log("New subscription:", subscription);
-                
-                // Subscription ko Supabase mein save karein
-                if (state.user) {
-                    const { error } = await supabase
-                        .from('profiles')
-                        .update({ push_subscription: subscription })
-                        .eq('id', state.user.id);
-                        
-                    if (error) {
-                        console.error('Error saving subscription:', error);
-                    } else {
-                        console.log('Push subscription saved to profile!');
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to subscribe:", err);
+      // === AUTH & INIT ===
+      async function init() {
+        initTheme();
+        const inviteCode = new URLSearchParams(window.location.search).get('join');
+        if (inviteCode) { localStorage.setItem('pending_join', inviteCode); history.pushState({}, '', window.location.pathname); }
+        setTimeout(() => document.getElementById('splash-screen').classList.add('opacity-0', 'pointer-events-none'), 1000);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) setupUser(session.user); else document.getElementById('screen-auth').classList.remove('hidden');
+        supabase.auth.onAuthStateChange((_, s) => {
+            if (s) setupUser(s.user); else {
+                document.getElementById('screen-app').classList.add('hidden'); document.getElementById('screen-auth').classList.remove('hidden'); state = { user: null, profile: null, activeChat: null };
             }
-        } else {
-            console.log("User is already subscribed:", subscription);
-             // Optionally, update the subscription on Supabase just in case
-            if (state.user) {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ push_subscription: subscription })
-                    .eq('id', state.user.id);
-                if (error) console.error('Error re-saving subscription:', error);
-            }
+        });
+      }
+      init(); // App ko start karein
+
+      async function setupUser(user) {
+        state.user = user;
+        let { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+        if (!data) {
+          const name = user.email.split('@')[0];
+          const newP = { id: user.id, username: name + Math.floor(Math.random()*1000), full_name: name, avatar_url: 'https://i.ibb.co/K0054k7/user-placeholder.png', is_online: true };
+          await supabase.from('profiles').insert(newP); state.profile = newP;
+        } else { state.profile = data; await supabase.from('profiles').update({ is_online: true }).eq('id', user.id); }
+        
+        document.getElementById('screen-app').classList.remove('hidden'); document.getElementById('screen-auth').classList.add('hidden');
+        loadRecentChats(); 
+        loadFeed(); // <-- YAHAN ADD KIYA GAYA
+        setupGlobalListener();
+        subscribeToPushNotifications(); // Notification permission maangein
+        checkForUnreadNotifications(); // NAYA: Unread notifications check karein
+
+        const pendingInvite = localStorage.getItem('pending_join');
+        if (pendingInvite) { localStorage.removeItem('pending_join'); await joinGroupWithCode(pendingInvite); }
+
+        showTab('feed');
+      }
+
+      // === NAYA HELPER: PROGRAMMATIC MESSAGE BHEJNE KE LIYE ===
+      async function sendProgrammaticMessage(userId, content, imageUrl, isFwd = false) {
+          if (!userId || (!content && !imageUrl)) return;
+
+          const payload = {
+              sender_id: state.user.id,
+              receiver_id: userId,
+              content: content,
+              image_url: imageUrl,
+              is_forwarded: isFwd,
+              reactions: {}
+          };
+
+          const { error } = await supabase.from('messages').insert(payload);
+          
+          // NAYA: Error logging
+          if (error) {
+              console.error("Share (sendProgrammaticMessage) Error:", error);
+              showToast("Failed to share message.", true);
+          } else {
+              // Purane chat ko delete list se hata dein
+              localStorage.removeItem(`chat_deleted_${userId}`);
+          }
+          return { error };
+      }
+
+      // === NAYA HELPER: FORWARD CLICK KO HANDLE KARNE KE LIYE ===
+      window.handleForwardClick = async function(user) {
+          if (!state.forwardContent) return;
+          
+          const modal = document.getElementById('modal-forward');
+          modal.classList.add('hidden'); // Modal ko band karein
+          
+          showToast(`Sharing post to ${user.full_name}...`);
+
+          // Check karein ki yeh post hai ya simple text
+          if (typeof state.forwardContent === 'object' && state.forwardContent.type === 'post' && state.forwardContent.post) {
+              
+              // --- YEH INSTAGRAM STYLE FIX HAI ---
+              const postData = state.forwardContent.post;
+              
+              // NAYA: full_name ko username par prathmikta dein
+              const senderName = postData.profiles.full_name || postData.profiles.username;
+
+              // Caption (text) aur Image URL dono ko ek saath define karein
+              const caption = `Post from ${senderName}${postData.caption ? ': ' + postData.caption : ''}`;
+              const imageUrl = postData.image_url;
+
+              // Ab, 'sendProgrammaticMessage' ko EK BAAR call karein
+              // jismein caption aur image dono hain.
+              // Humara 'renderMessage' function isko apne aap sahi se dikha dega.
+              await sendProgrammaticMessage(user.id, caption, imageUrl, true);
+
+              showToast('Post Shared!');
+              // --- FIX KHATM HUA ---
+
+          } else if (typeof state.forwardContent === 'string') {
+              // YEH PURANA "TEXT" LOGIC HAI (Fallback)
+              await sendProgrammaticMessage(user.id, state.forwardContent, null, true);
+              showToast('Shared!');
+          }
+          
+          state.forwardContent = null; // State ko clear karein
+      }
+
+      window.handleAuth = async function(type) {
+        const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
+        if(!email || !pass) return showToast("Fill all fields", true);
+        const btn = document.getElementById('btn-login');
+        const originalText = btn.innerText;
+        if(type==='login') { btn.innerText = "Logging in..."; }
+        else document.getElementById('auth-msg').textContent = "Processing...";
+        let res = type === 'signup' ? await supabase.auth.signUp({ email, password: pass }) : await supabase.auth.signInWithPassword({ email, password: pass });
+        if(res.error) { document.getElementById('auth-msg').textContent = res.error.message; btn.innerText = originalText; }
+        else if(type === 'signup') await supabase.auth.signInWithPassword({ email, password: pass });
+      }
+
+      window.handleLogout = async function() {
+        document.getElementById('modal-profile-edit').classList.add('hidden'); // Profile modal ko hide karein
+        document.getElementById('modal-settings').classList.add('hidden'); // NAYA: Settings modal ko bhi hide karein
+        
+        document.getElementById('screen-app').classList.add('hidden'); 
+        document.getElementById('screen-auth').classList.remove('hidden');
+        
+        if(state.user) await supabase.from('profiles').update({ is_online: false }).eq('id', state.user.id);
+        await supabase.auth.signOut();
+      }
+
+      // === CHAT LIST LOGIC (OPTIMIZED) ===
+      window.loadRecentChats = async function() {
+          const el = document.getElementById('chat-list-container');
+          if (!el.hasChildNodes()) {
+              el.innerHTML = '<div class="p-4 app-subtext text-center">Loading chats...</div>';
+          }
+          try {
+              const myGroupsPromise = supabase.from('group_members').select('group_id').eq('user_id', state.user.id);
+              const dmMessagesPromise = supabase.from('messages').select('*').or(`sender_id.eq.${state.user.id},receiver_id.eq.${state.user.id}`).is('group_id', null).order('created_at', { ascending: false }).limit(200);
+              const [ { data: myGroups }, { data: dmMessages } ] = await Promise.all([myGroupsPromise, dmMessagesPromise]);
+              const myGroupIds = myGroups ? myGroups.map(g => g.group_id) : [];
+              let groupMessages = [];
+              if (myGroupIds.length > 0) {
+                  const { data: gMsgs } = await supabase.from('messages').select('*').in('group_id', myGroupIds).order('created_at', { ascending: false }).limit(200);
+                  groupMessages = gMsgs || [];
+              }
+              let chatMap = new Map();
+              if(dmMessages) dmMessages.forEach(m => {
+                 const pid = m.sender_id === state.user.id ? m.receiver_id : m.sender_id;
+                 if(pid && !chatMap.has(pid)) {
+                     if(localStorage.getItem(`chat_deleted_${pid}`)) return;
+                     const clearedTime = localStorage.getItem(`cleared_${pid}`) || 0;
+                     if(new Date(m.created_at).getTime() > clearedTime) {
+                         let unread = (m.sender_id === pid && m.status !== 'read') ? 1 : 0;
+                         chatMap.set(pid, { type: 'dm', id: pid, lastMsg: m.is_deleted ? 'Deleted' : (m.content || 'Media'), time: m.created_at, unread: unread });
+                     }
+                 } else if(chatMap.has(pid) && m.sender_id === pid && m.status !== 'read') {
+                     chatMap.get(pid).unread++;
+                 }
+              });
+              if(groupMessages) groupMessages.forEach(m => {
+                 if(!chatMap.has(m.group_id)) {
+                     if(localStorage.getItem(`chat_deleted_${m.group_id}`)) return;
+                     chatMap.set(m.group_id, { type: 'group', id: m.group_id, lastMsg: m.is_deleted ? 'Deleted' : (m.content || 'Media'), time: m.created_at, unread: 0 });
+                 }
+              });
+              myGroupIds.forEach(gid => { 
+                  if(!chatMap.has(gid) && !localStorage.getItem(`chat_deleted_${gid}`)) 
+                    chatMap.set(gid, { type: 'group', id: gid, lastMsg: 'Group created', time: new Date().toISOString(), unread: 0 }); 
+              });
+              const dmIds = Array.from(chatMap.values()).filter(c => c.type === 'dm').map(c => c.id);
+              const groupIds = Array.from(chatMap.values()).filter(c => c.type === 'group').map(c => c.id);
+              let profilesPromise = Promise.resolve({ data: [] }); 
+              if (dmIds.length) { profilesPromise = supabase.from('profiles').select('*').in('id', dmIds); }
+              let groupsPromise = Promise.resolve({ data: [] });
+              if (groupIds.length) { groupsPromise = supabase.from('groups').select('*').in('id', groupIds); }
+              const [ { data: profiles }, { data: groups } ] = await Promise.all([profilesPromise, groupsPromise]);
+              let finalChats = Array.from(chatMap.values()).map(c => {
+                 if(c.type === 'dm') { const p = profiles.find(x => x.id === c.id); return p ? { ...c, name: p.full_name || p.username, avatar: p.avatar_url, obj: p } : null; } 
+                 else { const g = groups.find(x => x.id === c.id); return g ? { ...c, name: g.name, avatar: g.avatar_url || 'https://i.ibb.co/HpDV8hX/group-placeholder.png', obj: g } : null; }
+              }).filter(x => x).sort((a,b) => new Date(b.time) - new Date(a.time));
+              
+              // NAYA: Total unread count calculate karein
+              const totalUnread = finalChats.reduce((sum, chat) => sum + (chat.unread || 0), 0);
+              updateTotalUnreadBadge(totalUnread);
+              
+              el.innerHTML = ''; 
+              if(finalChats.length === 0) el.innerHTML = '<div class="text-center mt-20 app-subtext text-sm">Start a new chat</div>';
+              finalChats.forEach(c => {
+                 const div = document.createElement('div');
+                 div.id = `chat-item-${c.id}`;
+                 div.className = 'flex items-center gap-3 p-3 hover:bg-black/5 cursor-pointer border-b app-border transition-colors duration-200';
+                 div.onclick = () => openChat(c.obj, c.type);
+                 const badge = c.unread > 0 ? `<div class="unread-badge">${c.unread > 99 ? '99+' : c.unread}</div>` : '';
+                 div.innerHTML = `<div class="relative"><img src="${c.avatar}" loading="lazy" class="w-12 h-12 rounded-full object-cover bg-gray-700 cursor-pointer" onclick="(function(e){ e.stopPropagation(); openImageViewer('${c.avatar}'); })(event)">${c.type==='dm' && c.obj.is_online ? `<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>` : ''}</div><div class="flex-1 min-w-0"><div class="flex justify-between"><h4 class="app-text font-medium truncate text-[15px] flex items-center gap-1">${c.name} ${c.type==='dm' && c.obj.is_verified ? '<i class="ph-fill ph-seal-check text-blue-400 text-sm"></i>' : ''}</h4><span class="text-[11px] app-subtext ${c.unread > 0 ? 'text-green-500 font-bold' : ''}">${getSmartDate(c.time)}</span></div><div class="flex justify-between items-center"><p class="text-[13px] app-subtext truncate max-w-[70%]">${c.lastMsg}</p>${badge}</div></div>`;
+                 el.appendChild(div);
+              });
+          } catch (error) {
+              console.error("Error loading chats:", error);
+              el.innerHTML = '<div class="text-center mt-20 app-subtext text-sm text-red-400">Error loading chats. Try refreshing.</div>';
+          }
+      }
+      window.openChatOptions = function(c) { state.selectedChatForAction = c; document.getElementById('chat-options-title').textContent = c.name; document.getElementById('chat-options-overlay').classList.remove('hidden'); }
+      window.handleChatAction = async function(action) { document.getElementById('chat-options-overlay').classList.add('hidden'); if(action === 'delete') { localStorage.setItem(`chat_deleted_${state.selectedChatForAction.id}`, true); showToast("Chat removed"); loadRecentChats(); } }
+
+      // === CHAT VIEW LOGIC ===
+      window.openChat = async function(obj, type) {
+        state.activeChat = { ...obj, type, iAmAdmin: false, allMembers: [] };
+        document.getElementById('view-chat').classList.remove('translate-x-full');
+        document.getElementById('chat-empty').classList.add('hidden');
+        document.getElementById('chat-interface').classList.remove('hidden');
+        const viewport = document.querySelector('meta[name=viewport]');
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content');
+        const badge = document.querySelector(`#chat-item-${obj.id} .unread-badge`);
+        if(badge) badge.remove();
+        const savedBg = localStorage.getItem(`chat_bg_${state.activeChat.id}`);
+        const chatBgEl = document.querySelector('.chat-bg');
+        if(savedBg && savedBg !== 'default') { chatBgEl.style.backgroundImage = savedBg; } 
+        else { chatBgEl.style.backgroundImage = "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')"; }
+        const chatNameEl = document.getElementById('chat-user-name');
+        chatNameEl.textContent = type === 'dm' ? (obj.full_name || obj.username) : obj.name;
+        if (type === 'dm' && obj.is_verified) {
+            chatNameEl.innerHTML = `${obj.full_name || obj.username} <i class="ph-fill ph-seal-check text-blue-400 text-base inline-block"></i>`;
         }
-    }
+        document.getElementById('chat-user-avatar').src = obj.avatar_url || (type === 'group' ? 'https://i.ibb.co/HpDV8hX/group-placeholder.png' : 'https://i.ibb.co/K0054k7/user-placeholder.png');
+        const isDM = type === 'dm';
+        const blocked = isDM ? localStorage.getItem(`blocked_${obj.id}`) : false;
+        const blockBtn = document.getElementById('menu-block-btn');
+        if(isDM) {
+            document.getElementById('chat-user-status').textContent = obj.is_online ? 'Online' : 'Offline';
+            blockBtn.innerHTML = blocked ? '<i class="ph ph-check-circle mr-2"></i> Unblock' : '<i class="ph ph-prohibit mr-2"></i> Block';
+            blockBtn.onclick = () => handleBlock();
+            if(blocked) { document.getElementById('chat-footer').classList.add('hidden'); document.getElementById('blocked-banner').classList.remove('hidden'); } 
+            else { document.getElementById('chat-footer').classList.remove('hidden'); document.getElementById('blocked-banner').classList.add('hidden'); }
+        } else { 
+            const { data } = await supabase.from('group_members').select('is_admin').eq('group_id', obj.id).eq('user_id', state.user.id).single();
+            state.activeChat.iAmAdmin = data ? data.is_admin : false;
+            document.getElementById('chat-user-status').textContent = 'Group';
+            blockBtn.innerHTML = '<i class="ph ph-sign-out mr-2"></i> Leave Group'; 
+            blockBtn.onclick = () => handleBlockLeave(); 
+            if (state.activeChat.is_locked && !state.activeChat.iAmAdmin) document.getElementById('chat-footer').classList.add('hidden');
+            else document.getElementById('chat-footer').classList.remove('hidden');
+            document.getElementById('blocked-banner').classList.add('hidden'); 
+        }
+        document.getElementById('chat-menu-dropdown').classList.add('hidden');
+        if(isDM) await supabase.from('messages').update({ status: 'read' }).eq('sender_id', obj.id).eq('receiver_id', state.user.id).eq('status', 'sent');
+        document.getElementById('messages-area').style.scrollBehavior = 'auto'; 
+        await loadMessages(); 
+        setupChatListener();
+        setTimeout(() => { document.getElementById('messages-area').style.scrollBehavior = 'smooth'; }, 500);
+      }
+      window.viewChatInfo = async function() {
+          if (!state.activeChat) return;
+          
+          // NAYA FIX: Agar DM hai, toh full profile page par bhej dein
+          if (state.activeChat.type === 'dm') {
+                              showUserProfile(state.activeChat.id); // 'return' ko yahan se hata diya
+                closeChat(); // Chat screen ko band karne ke liye yeh add kiya
+                return; // Function ko yahin rok diya
+          }
+          
+          // Group chats ke liye purana logic continue hoga
+          const modal = document.getElementById('modal-user-view');
+          const obj = state.activeChat;
+          const type = state.activeChat.type;
+          document.getElementById('btn-edit-group').classList.add('hidden');
+          document.getElementById('view-user-info').classList.add('hidden');
+          document.getElementById('group-info-extra').classList.add('hidden');
+          document.getElementById('view-action-btn').classList.add('hidden');
+          document.getElementById('view-invite-link-container').classList.add('hidden'); 
+          document.getElementById('view-avatar').src = obj.avatar_url || (type === 'group' ? 'https://i.ibb.co/HpDV8hX/group-placeholder.png' : 'https://i.ibb.co/K0054k7/user-placeholder.png');
+          const viewNameEl = document.getElementById('view-name');
+          viewNameEl.textContent = type === 'dm' ? (obj.full_name || obj.username) : obj.name;
+          if (type === 'dm' && obj.is_verified) {
+               viewNameEl.innerHTML = `${obj.full_name || obj.username} <i class="ph-fill ph-seal-check text-blue-400 text-xl inline-block"></i>`;
+          }
+          if (type === 'dm') {
+              document.getElementById('view-username').textContent = '@' + obj.username;
+              document.getElementById('view-about').textContent = obj.about || '...';
+              document.getElementById('view-user-info').classList.remove('hidden'); 
+          } else { 
+              document.getElementById('view-username').textContent = 'Group';
+              document.getElementById('group-info-extra').classList.remove('hidden'); 
+              if(state.activeChat.iAmAdmin) document.getElementById('btn-edit-group').classList.remove('hidden');
+              if (state.activeChat.invite_code) document.getElementById('view-invite-link-container').classList.remove('hidden');
+              const membersList = document.getElementById('view-group-members');
+              membersList.innerHTML = '<div class="app-subtext text-sm">Loading members...</div>';
+              const { data: memberLinks } = await supabase.from('group_members').select('user_id, is_admin').eq('group_id', obj.id);
+              if (memberLinks) {
+                  const userIds = memberLinks.map(m => m.user_id);
+                  const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
+                  if (profiles) {
+                      state.activeChat.allMembers = profiles.map(p => ({ ...p, is_admin: memberLinks.find(m => m.user_id === p.id)?.is_admin || false }));
+                      membersList.innerHTML = '';
+                      state.activeChat.allMembers.forEach(p => {
+                          const d = document.createElement('div');
+                          d.className = 'flex items-center gap-3 p-2 rounded-lg';
+                          d.innerHTML = `<img src="${p.avatar_url}" loading="lazy" class="w-8 h-8 rounded-full object-cover"><span class="flex-1 app-text">${p.full_name} ${p.id === state.user.id ? '(You)' : ''}</span>${p.is_admin ? '<span class="text-xs text-[#00a884] font-bold">Admin</span>' : ''}`;
+                          membersList.appendChild(d);
+                      });
+                      document.getElementById('view-about').textContent = `${memberLinks.length} participants`;
+                  }
+              }
+              document.getElementById('view-user-info').classList.remove('hidden');
+          }
+          modal.classList.remove('hidden');
+      }
+      window.closeChat = function() {
+         document.getElementById('view-chat').classList.add('translate-x-full');
+         state.activeChat = null; if(state.chatSub) supabase.removeChannel(state.chatSub);
+         document.getElementById('unread-banner').classList.add('hidden');
+         const viewport = document.querySelector('meta[name=viewport]');
+         viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+         setTimeout(() => { document.getElementById('messages-area').innerHTML = ''; loadRecentChats(); }, 300);
+      }
+
+      // === MESSAGE LOGIC ===
+      async function loadMessages() {
+         const area = document.getElementById('messages-area');
+         let query = supabase.from('messages').select('*, sender:sender_id(username, full_name, is_verified)').order('created_at', { ascending: true });
+         if(state.activeChat.type === 'dm') { const myId = state.user.id; const otherId = state.activeChat.id; query = query.or(`and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`); } 
+         else { query = query.eq('group_id', state.activeChat.id); }
+         const { data } = await query;
+         area.innerHTML = '';
+         if(data) {
+            let lastDate = ''; const clearTime = localStorage.getItem(`cleared_${state.activeChat.id}`) || 0;
+            data.forEach(m => {
+               if(new Date(m.created_at).getTime() < clearTime) return;
+               if(localStorage.getItem(`del_me_${m.id}`)) return;
+               const dLabel = getSmartDate(m.created_at);
+               if(dLabel !== lastDate) { area.innerHTML += `<div class="flex justify-center my-4"><span class="app-modal app-subtext text-xs px-3 py-1 rounded-lg font-medium shadow-sm border app-border">${dLabel}</span></div>`; lastDate = dLabel; }
+               renderMessage(m);
+            });
+            setTimeout(() => { area.scrollTop = area.scrollHeight; }, 0); 
+         }
+      }
+      window.scrollToMessage = function(msgId) {
+          const el = document.getElementById('msg-' + msgId);
+          if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.querySelector('div').classList.add('message-highlight');
+              setTimeout(() => el.querySelector('div').classList.remove('message-highlight'), 1000);
+          } else { showToast("Message not loaded"); }
+      }
+      
+      // 'linkify' function was here, I moved it up to HELPER section
+
+      function renderMessage(m) {
+         const isMe = m.sender_id === state.user.id;
+         const area = document.getElementById('messages-area');
+         const div = document.createElement('div');
+         let heartUsers = (m.reactions && m.reactions['heart'] && Array.isArray(m.reactions['heart'])) ? m.reactions['heart'] : [];
+         const hasReaction = heartUsers.length > 0;
+         div.className = `flex w-full ${hasReaction ? 'mb-6' : 'mb-1'} msg-row relative ${isMe ? 'justify-end' : 'justify-start'}`;
+         div.id = `msg-${m.id}`;
+         let content = m.content || '';
+         if(m.is_deleted) { content = `<span class="italic text-gray-400 flex items-center gap-1 text-[13px]"><i class="ph-fill ph-prohibit"></i> Deleted</span>`; } 
+         else {
+             if(content) content = linkify(content); // This function is now defined globally
+             if(m.image_url) content = `<img src="${m.image_url}" loading="lazy" class="rounded-lg max-w-[280px] w-full mb-1 cursor-pointer border border-white/10"><br>` + content;
+             if(m.reply_to) {
+                 content = `<div onclick="scrollToMessage('${m.reply_to.id}')" class="reply-box truncate">
+                     <div class="font-bold text-[#00a884] text-[10px] mb-0.5">Replying to</div>
+                     ${m.reply_to.text}
+                 </div>` + content;
+             }
+             if(m.is_forwarded) content = `<div class="text-[10px] text-gray-400 italic mb-1 flex items-center gap-1"><i class="ph-bold ph-share"></i> Forwarded</div>` + content;
+         }
+         let senderName = '';
+         if(!isMe && state.activeChat.type === 'group' && m.sender) {
+             const colors = ['text-orange-400', 'text-blue-400', 'text-pink-400', 'text-purple-400', 'text-yellow-400'];
+             const color = colors[m.sender_id.charCodeAt(0) % colors.length];
+             const verifiedTick = m.sender.is_verified ? ' <i class="ph-fill ph-seal-check text-blue-400 text-xs inline-block"></i>' : '';
+             senderName = `<div class="text-xs ${color} font-bold mb-1 cursor-pointer hover:underline" onclick="viewUserProfileById('${m.sender_id}')">${m.sender.full_name || m.sender.username}${verifiedTick}</div>`;
+         }
+         const time = new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+         const checks = isMe && !m.is_deleted ? `<i class="ph-bold ph-checks ${m.status==='read' ? 'text-blue-400' : 'text-gray-500'} ml-1"></i>` : '';
+         let reactionHTML = '';
+         if (hasReaction) {
+             const count = heartUsers.length;
+             const countText = count > 1 ? `<span class="ml-1 text-[10px] font-bold app-text">${count}</span>` : '';
+             reactionHTML = `<div class="reaction-badge"><span class="text-xs text-red-500">❤️</span>${countText}</div>`;
+         }
+         div.innerHTML = `
+           <div class="max-w-[85%] md:max-w-[60%] px-3 py-1.5 ${isMe ? 'bubble-out' : 'bubble-in'} shadow-sm relative group touch-pan-y select-none text-sm app-text">
+              ${senderName}
+              <div class="text-[15px] leading-snug break-words msg-text">${content}</div>
+              <div class="text-[10px] app-subtext text-right mt-1 flex justify-end items-center gap-1 msg-meta min-w-[50px]">${time}${checks}</div>
+              ${reactionHTML}
+           </div>`;
+         const imgEl = div.querySelector('.msg-text img');
+         if (imgEl) {
+             imgEl.addEventListener('click', (e) => { e.stopPropagation(); openImageViewer(imgEl.src); });
+             imgEl.addEventListener('touchstart', (e) => { e.stopPropagation(); });
+         }
+         const hammer = new Hammer(div);
+         hammer.get('press').set({ time: 500 });
+         hammer.get('doubletap').set({ interval: 400 });
+         hammer.on('press', () => openMsgOptions(m));
+         hammer.on('swiperight', () => { 
+             if(!m.is_deleted) { 
+                 state.replyTo = { id: m.id, text: m.content || 'Image' }; 
+                 document.getElementById('reply-context').classList.remove('hidden'); 
+                 document.getElementById('reply-text').textContent = "Replying to: ".concat(state.replyTo.text.length > 50 ? state.replyTo.text.substring(0, 50) + '...' : state.replyTo.text);
+                 document.getElementById('msg-input').focus(); 
+                 if(navigator.vibrate) navigator.vibrate(50); 
+             } 
+         });
+         hammer.on('doubletap', async () => {
+             if(m.is_deleted) return;
+             const bubble = div.querySelector('.bubble-in, .bubble-out');
+             const heartAnim = document.createElement('div');
+             heartAnim.innerHTML = '❤️';
+             heartAnim.className = 'absolute inset-0 flex items-center justify-center text-6xl animate-heart-beat pointer-events-none z-50';
+             bubble.appendChild(heartAnim);
+             setTimeout(() => heartAnim.remove(), 800);
+             let currentUsers = (m.reactions && Array.isArray(m.reactions['heart'])) ? [...m.reactions['heart']] : [];
+             const myIndex = currentUsers.indexOf(state.user.id);
+             if (myIndex > -1) { currentUsers.splice(myIndex, 1); } else { currentUsers.push(state.user.id); } 
+             const newReactions = { ...(m.reactions || {}), 'heart': currentUsers };
+             const newCount = currentUsers.length;
+             if (newCount > 0) {
+                 div.classList.add('mb-6'); div.classList.remove('mb-1');
+                 let badge = bubble.querySelector('.reaction-badge');
+                 const countHtml = newCount > 1 ? `<span class="ml-1 text-[10px] font-bold app-text">${newCount}</span>` : '';
+                 if(!badge) { badge = document.createElement('div'); badge.className = 'reaction-badge'; bubble.appendChild(badge); }
+                 badge.innerHTML = `<span class="text-xs text-red-500">❤️</span>${countHtml}`;
+             } else {
+                 div.classList.add('mb-1'); div.classList.remove('mb-6');
+                 bubble.querySelector('.reaction-badge')?.remove();
+             }
+             await supabase.from('messages').update({ reactions: newReactions }).eq('id', m.id);
+         });
+         area.appendChild(div);
+      }
+      window.sendMessage = async function(url=null) {
+        const inp = document.getElementById('msg-input'); const txt = inp.value.trim();
+        if(!txt && !url) return;
+        inp.focus();
+        if(state.activeChat.type === 'dm') {
+            const { data: blocked } = await supabase.from('blocks').select('*').eq('blocker_id', state.activeChat.id).eq('blocked_id', state.user.id);
+            if(blocked && blocked.length > 0) return showToast("You are blocked by this user", true);
+        }
+        if (state.activeChat.type === 'group' && state.activeChat.is_locked && !state.activeChat.iAmAdmin) {
+            return showToast("Group is locked. Only admins can send messages.", true);
+        }
+        const payload = { sender_id: state.user.id, content: txt, image_url: url, reply_to: state.replyTo, is_forwarded: !!state.forwardContent, reactions: {} };
+        if(state.activeChat.type === 'dm') payload.receiver_id = state.activeChat.id; else payload.group_id = state.activeChat.id;
+        inp.value = ''; cancelReply(); cancelForward(); 
+        const { error } = await supabase.from('messages').insert(payload);
+        if(error) showToast('Failed to send'); else { 
+            if(state.activeChat.type === 'dm') localStorage.removeItem(`chat_deleted_${state.activeChat.id}`); 
+            setTimeout(() => { const area = document.getElementById('messages-area'); area.scrollTop = area.scrollHeight; }, 100);
+        }
+      }
+      window.cancelReply = function() { state.replyTo = null; document.getElementById('reply-context').classList.add('hidden'); }
+      window.cancelForward = function() { state.forwardContent = null; document.getElementById('forward-indicator').classList.add('hidden'); }
+      window.handleBlock = function() { const key = `blocked_${state.activeChat.id}`; if(localStorage.getItem(key)) { localStorage.removeItem(key); showToast("Unblocked"); } else { localStorage.setItem(key, 'true'); showToast("Blocked"); } openChat(state.activeChat, 'dm'); }
+      window.handleBlockLeave = async function() { if(state.activeChat.type === 'dm') handleBlock(); else { if(confirm("Leave this group?")) { await supabase.from('group_members').delete().eq('group_id', state.activeChat.id).eq('user_id', state.user.id); closeChat(); showToast("You left"); } } }
+      
+      // === IMAGE ZOOM FUNCTIONS (FIXED) ===
+      window.openImageViewer = function(src) {
+          const img = document.getElementById('full-image');
+          const modal = document.getElementById('modal-image-viewer');
+          if (pinchZoomInstance) { pinchZoomInstance.destroy(); pinchZoomInstance = null; }
+          img.src = src; 
+          modal.classList.remove('hidden');
+          try {
+            pinchZoomInstance = new PinchZoom.default(img, {
+                minZoom: 0.8, maxZoom: 4, container: img.parentElement, lockDragAxis: true
+            });
+          } catch(e) { console.error("PINCH ZOOM FAILED:", e); showToast("Error: Zoom library failed.", true); }
+      }
+      window.closeImageViewer = function() {
+          document.getElementById('modal-image-viewer').classList.add('hidden');
+          if (pinchZoomInstance) { pinchZoomInstance.destroy(); pinchZoomInstance = null; }
+          document.getElementById('full-image').src = ""; 
+      }
+
+      // === IMAGE CROP & UPLOAD (UPDATE KIYA GAYA) ===
+      window.initCropperUpload = function(context) { 
+          currentCropContext = context; 
+          const rootStyles = document.documentElement.style;
+          if (context === 'post_image') { rootStyles.setProperty('--cropper-shape', '0%'); } // Square
+          else { rootStyles.setProperty('--cropper-shape', '50%'); } // Round
+          document.getElementById('upload-input-hidden').click(); 
+      }
+      window.handleFileSelect = function(input) { 
+          if (input.files && input.files[0]) { 
+              const reader = new FileReader(); 
+              reader.onload = function (e) { 
+                  const img = document.getElementById('cropper-img'); 
+                  img.src = e.target.result; 
+                  document.getElementById('modal-cropper').classList.remove('hidden'); 
+                  if(cropper) cropper.destroy(); 
+                  const aspect = (currentCropContext === 'post_image') ? 1/1 : 1/1; 
+                  cropper = new Cropper(img, { 
+                      aspectRatio: aspect, viewMode: 1, dragMode: 'move', 
+                      autoCropArea: 1, background: false, modal: false 
+                  }); 
+              }; 
+              reader.readAsDataURL(input.files[0]); 
+          } 
+          input.value = ''; 
+      }
+      window.closeCropper = function() { document.getElementById('modal-cropper').classList.add('hidden'); if(cropper) { cropper.destroy(); cropper = null; } }
+      window.saveCroppedImage = function() { 
+          if(!cropper) return; 
+          showToast("Processing..."); 
+          const options = (currentCropContext === 'post_image') 
+              ? { width: 1080, height: 1080, imageSmoothingQuality: 'high' } 
+              : { width: 500, height: 500 }; 
+          cropper.getCroppedCanvas(options).toBlob(async (blob) => { 
+              closeCropper(); 
+              uploadToImgBB(blob); 
+              if (currentCropContext === 'post_image') {
+                  const previewUrl = URL.createObjectURL(blob);
+                  document.getElementById('post-image-img').src = previewUrl;
+                  document.getElementById('post-image-img').classList.remove('hidden');
+                  document.querySelector('#post-image-preview i').classList.add('hidden');
+              }
+          }); 
+      }
+      async function uploadToImgBB(blob) { 
+          const fd = new FormData(); 
+          fd.append('image', blob, 'cropped.jpg'); 
+          showToast("Uploading..."); 
+          const postBtn = document.getElementById('btn-upload-post');
+          if (currentCropContext === 'post_image') {
+              postBtn.disabled = true;
+              postBtn.textContent = "Uploading Image...";
+          }
+          try { 
+              const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: 'POST', body: fd }); 
+              const d = await r.json(); 
+              if(d.success) { 
+                  const url = d.data.url; 
+                  if (currentCropContext === 'profile') { 
+                      document.getElementById('profile-edit-img').src = url; 
+                  } else if (currentCropContext === 'group') { 
+                      state.createGroupImg = url; 
+                      document.getElementById('group-create-img').src = url; 
+                  } else if (currentCropContext === 'group_edit') { 
+                      document.getElementById('group-edit-img').src = url; 
+                  } else if (currentCropContext === 'post_image') {
+                      postBtn.dataset.imageUrl = url; 
+                      postBtn.disabled = false;
+                      postBtn.textContent = "Share";
+                  }
+                  showToast("Image processed!"); 
+              } else { 
+                  showToast("Upload failed", true); 
+                  if(postBtn) { postBtn.disabled = false; postBtn.textContent = "Share"; }
+              } 
+          } catch(e) { 
+              showToast("Error uploading", true); 
+              if(postBtn) { postBtn.disabled = false; postBtn.textContent = "Share"; }
+          } 
+      }
+      window.uploadImage = async function(inp) { const f = inp.files[0]; if(!f) return; const fd = new FormData(); fd.append('image', f); showToast("Uploading..."); try { const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,{method:'POST',body:fd}); const d = await r.json(); if(d.success) await sendMessage(d.data.url); } catch(e){} }
+
+      // === GROUP LOGIC ===
+      window.openCreateGroup = function() { document.getElementById('modal-create-group').classList.remove('hidden'); loadGroupUsers(); }
+      window.loadGroupUsers = async function() { const list = document.getElementById('group-users-list'); list.innerHTML = 'Loading...'; const { data } = await supabase.from('profiles').select('*').neq('id', state.user.id); list.innerHTML = ''; selectedGroupMembers.clear(); data.forEach(u => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-2 app-input rounded-lg mb-2 cursor-pointer border border-transparent'; d.innerHTML = `<img src="${u.avatar_url}" loading="lazy" class="w-8 h-8 rounded-full"><span class="app-text flex-1">${u.full_name}</span><div id="chk-${u.id}" class="w-5 h-5 rounded-full border border-gray-500"></div>`; d.onclick = () => { if(selectedGroupMembers.has(u.id)) { selectedGroupMembers.delete(u.id); d.style.borderColor='transparent'; d.querySelector(`#chk-${u.id}`).style.backgroundColor='transparent'; } else { selectedGroupMembers.add(u.id); d.style.borderColor='#00a884'; d.querySelector(`#chk-${u.id}`).style.backgroundColor='#00a884'; } }; list.appendChild(d); }); }
+      window.createGroup = async function() { const name = document.getElementById('group-name').value; if(!name || !selectedGroupMembers.size) return showToast("Name & Members needed", true); const { data: g, error } = await supabase.from('groups').insert({ name, created_by: state.user.id, avatar_url: state.createGroupImg }).select().single(); if(error) return showToast(error.message, true); const members = Array.from(selectedGroupMembers).map(uid => ({ group_id: g.id, user_id: uid, is_admin: false })); members.push({ group_id: g.id, user_id: state.user.id, is_admin: true }); await supabase.from('group_members').insert(members); document.getElementById('modal-create-group').classList.add('hidden'); showToast("Group Created"); loadRecentChats(); }
+      window.openGroupEditModal = function() { document.getElementById('modal-user-view').classList.add('hidden'); document.getElementById('modal-group-edit').classList.remove('hidden'); renderGroupEditModal(); renderInviteCodeUI(); loadGroupEditMembers(); }
+      
+      // === REALTIME LISTENERS ===
+      function setupChatListener() { 
+          if(state.chatSub) supabase.removeChannel(state.chatSub); 
+          state.chatSub = supabase.channel('chat')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async p => {
+              if(p.eventType === 'INSERT') { 
+                  let m = p.new;
+                  const isMyChat = (state.activeChat.type === 'group' && m.group_id === state.activeChat.id) || 
+                                 (state.activeChat.type === 'dm' && ((m.sender_id === state.activeChat.id && m.receiver_id === state.user.id) || (m.sender_id === state.user.id && m.receiver_id === state.activeChat.id)));
+                  if(isMyChat) { 
+                      if (state.activeChat.type === 'group' && m.sender_id !== state.user.id && !m.sender) {
+                           const { data: senderData } = await supabase.from('profiles').select('username, full_name, is_verified').eq('id', m.sender_id).single();
+                          if (senderData) m.sender = senderData;
+                      }
+                      renderMessage(m); 
+                      setTimeout(() => { const area = document.getElementById('messages-area'); area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' }); }, 50); 
+                  } 
+              } else if(p.eventType === 'UPDATE') {
+                  const msgEl = document.getElementById(`msg-${p.new.id}`);
+                  if(msgEl && state.activeChat && p.new.group_id === state.activeChat.id) { loadMessages(); }
+              } else if(p.eventType === 'DELETE') {
+                  loadMessages(); 
+              }
+          }).subscribe(); 
+      }
+      function setupGlobalListener() { supabase.channel('global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { if(p.new.receiver_id === state.user.id && (!state.activeChat || p.new.sender_id !== state.activeChat.id)) { showToast("New Message"); loadRecentChats(); } }).subscribe(); }
+
+      // === BLUE TICK ===
+      window.openBlueTickModal = async function() {
+          document.getElementById('modal-settings').classList.add('hidden');
+          if (state.profile.is_verified) {
+               document.getElementById('blue-tick-status-button').innerHTML = `<div class="flex items-center gap-3"><i class="ph-fill ph-seal-check text-xl text-blue-400"></i><span class="app-text">Verified</span></div><i class="ph-fill ph-seal-check text-blue-400"></i>`;
+               document.getElementById('blue-tick-status-button').onclick = null;
+               return;
+          }
+          document.getElementById('modal-blue-tick').classList.remove('hidden');
+      }
+
+      // === SEARCH ===
+      window.toggleSearchMode = function() { document.getElementById('search-bar-container').classList.remove('hidden'); document.getElementById('user-search').focus(); }
+      window.closeSearchMode = function() { document.getElementById('search-bar-container').classList.add('hidden'); loadRecentChats(); }
+      window.handleSearchKeyUp = function(e) { if(e.key==='Enter') performSearch(); }
+      window.performSearch = async function() { const q = document.getElementById('user-search').value; if(!q) return; const { data } = await supabase.from('profiles').select('*').neq('id', state.user.id).or(`username.ilike.%${q}%,full_name.ilike.%${q}%`); const el = document.getElementById('chat-list-container'); el.innerHTML = ''; if(data) data.forEach(u => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-3 hover:bg-black/5 cursor-pointer'; d.innerHTML = `<img src="${u.avatar_url}" loading="lazy" class="w-10 h-10 rounded-full"><div class="flex-1 app-text">${u.full_name}</div>`; d.onclick = () => { closeSearchMode(); openChat(u, 'dm'); }; el.appendChild(d); }); }
+
+      // === PROFILE & USER VIEW ===
+      window.openProfileEdit = function() { document.getElementById('modal-profile-edit').classList.remove('hidden'); document.getElementById('profile-name').value=state.profile.full_name; document.getElementById('profile-about').value=state.profile.about; document.getElementById('profile-edit-img').src=state.profile.avatar_url; document.getElementById('profile-username').value = state.profile.username; }
+      window.saveProfile = async function() { 
+          const newName = document.getElementById('profile-name').value;
+          const newAbout = document.getElementById('profile-about').value;
+          const newAvatar = document.getElementById('profile-edit-img').src;
+          // const newUsername = document.getElementById('profile-username').value.trim().toLowerCase(); // HATA DIYA GAYA
+
+          // Username validation logic hata di gayi hai
+
+          // Kadam 2: Profile save karein (bina username update kiye)
+          const updates = { 
+              full_name: newName, 
+              about: newAbout, 
+              avatar_url: newAvatar
+              // username: newUsername // HATA DIYA GAYA
+          }; 
+          
+          const { error } = await supabase.from('profiles').update(updates).eq('id', state.user.id); 
+          
+          if(!error) { 
+              state.profile = {...state.profile, ...updates}; 
+              loadProfilePage(state.user.id); // Apni profile refresh karein
+              document.getElementById('modal-profile-edit').classList.add('hidden'); 
+              showToast('Profile Saved!'); 
+          } else {
+              showToast("Error saving profile: " + error.message, true);
+          }
+      }
+      window.viewUserProfileById = async function(uid) { 
+          document.getElementById('modal-user-view').classList.remove('hidden'); 
+          document.getElementById('btn-edit-group').classList.add('hidden'); 
+          document.getElementById('view-user-info').classList.add('hidden'); 
+          document.getElementById('group-info-extra').classList.add('hidden'); 
+          document.getElementById('view-action-btn').classList.add('hidden'); 
+          const { data: u } = await supabase.from('profiles').select('*').eq('id', uid).single(); 
+          if(u) { 
+              state.viewedUserProfile = u; 
+              document.getElementById('view-avatar').src = u.avatar_url; 
+              document.getElementById('view-name').innerHTML = `${u.full_name} ${u.is_verified ? '<i class="ph-fill ph-seal-check text-blue-400 text-xl inline-block"></i>' : ''}`;
+              document.getElementById('view-username').textContent = '@' + u.username; 
+              document.getElementById('view-about').textContent = u.about; 
+              document.getElementById('view-user-info').classList.remove('hidden'); 
+              if(u.id !== state.user.id) document.getElementById('view-action-btn').classList.remove('hidden'); 
+          } 
+      }
+      window.startDirectChat = function() { document.getElementById('modal-user-view').classList.add('hidden'); openChat(state.viewedUserProfile, 'dm'); }
+      
+      // === MISC MODALS & ACTIONS ===
+      window.toggleChatMenu = function() { document.getElementById('chat-menu-dropdown').classList.toggle('hidden'); }
+      window.clearChat = function() { if(confirm("Clear chat?")) { localStorage.setItem(`cleared_${state.activeChat.id}`, Date.now()); loadMessages(); toggleChatMenu(); } }
+      window.openWallpaperModal = function() { document.getElementById('modal-wallpaper').classList.remove('hidden'); toggleChatMenu(); }
+      window.setWallpaper = function(val) { const bg = val === 'default' ? "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911D-60D70FCDED21.png')" : val; document.querySelector('.chat-bg').style.backgroundImage = bg; if(state.activeChat) localStorage.setItem(`chat_bg_${state.activeChat.id}`, val); document.getElementById('modal-wallpaper').classList.add('hidden'); }
+      window.openMsgOptions = function(msg) { state.selectedMsg = msg; document.getElementById('msg-options-overlay').classList.remove('hidden'); if(msg.sender_id === state.user.id) document.getElementById('btn-delete-everyone').classList.remove('hidden'); else document.getElementById('btn-delete-everyone').classList.add('hidden'); }
+      window.closeMsgOptions = function() { document.getElementById('msg-options-overlay').classList.add('hidden'); }
+      window.handleMsgAction = async function(action) { closeMsgOptions(); const m = state.selectedMsg; if(action === 'reply') { state.replyTo = { id: m.id, text: m.content || 'Media' }; document.getElementById('reply-context').classList.remove('hidden'); document.getElementById('reply-text').textContent = "Replying to: ".concat(m.content && m.content.length > 50 ? m.content.substring(0, 50) + '...' : m.content || 'Media'); } else if(action === 'copy') { navigator.clipboard.writeText(m.content || ''); showToast('Copied'); } else if(action === 'delete_me') { localStorage.setItem(`del_me_${m.id}`, true); loadMessages(); } else if(action === 'delete_everyone') { if(confirm('Delete for everyone?')) await supabase.from('messages').update({ is_deleted: true, content: null, image_url: null }).eq('id', m.id); } else if(action === 'forward') { openForwardModal(m.content || (m.image_url ? 'Image' : '')); } }
+      window.openForwardModal = function(content) { 
+          // 'content' argument 'openShareModal' se aa raha hai
+          if(content) state.forwardContent = content; 
+          
+          document.getElementById('modal-forward').classList.remove('hidden'); 
+          
+          // NAYA: Search input ko clear karein
+          const searchInput = document.getElementById('forward-search-input');
+          if (searchInput) searchInput.value = '';
+          
+          loadForwardList(); 
+      }
+      window.loadForwardList = async function() { 
+          const el = document.getElementById('forward-list');
+          const query = document.getElementById('forward-search-input').value.trim();
+          
+          // Agar list pehli baar load ho rahi hai (search nahi hai), tab hi "Loading" dikhayein
+          if (!query && el.children.length === 0) {
+              el.innerHTML = '<p class="app-subtext text-center p-4">Loading contacts...</p>'; 
+          }
+
+          let queryBuilder = supabase.from('profiles').select('*').neq('id', state.user.id);
+
+          // NAYA: Agar search query hai, to filter karein
+          if (query) {
+              queryBuilder = queryBuilder.or(`username.ilike.%${query}%,full_name.ilike.%${query}%`);
+          }
+
+          const { data, error } = await queryBuilder; 
+          
+          el.innerHTML = ''; // List ko hamesha clear karein
+
+          if (error) {
+              el.innerHTML = '<p class="app-subtext text-center p-4 text-red-400">Error loading users.</p>';
+              return;
+          }
+          if (!data || data.length === 0) {
+              el.innerHTML = `<p class="app-subtext text-center p-4">No users found ${query ? 'for "' + query + '"' : ''}</p>`;
+              return;
+          }
+
+          data.forEach(u => { 
+              const d = document.createElement('div'); 
+              d.className = 'flex items-center gap-3 p-3 app-text rounded-lg'; 
+              
+              const sendButton = document.createElement('button');
+              sendButton.className = 'bg-[#00a884] text-white px-4 py-2 rounded-lg text-sm font-bold ml-auto';
+              sendButton.textContent = 'Send';
+              
+              sendButton.onclick = () => handleForwardClick(u);
+              
+              d.innerHTML = `<img src="${u.avatar_url}" loading="lazy" class="w-10 h-10 rounded-full object-cover bg-gray-700"><span class="flex-1 font-medium">${u.full_name}</span>`;
+              
+              d.appendChild(sendButton);
+              el.appendChild(d); 
+          }); 
+      }
+      
+      // === GROUP MANAGEMENT ===
+      function renderGroupEditModal() { document.getElementById('group-edit-name').value = state.activeChat.name; document.getElementById('group-edit-img').src = state.activeChat.avatar_url || 'https://i.ibb.co/HpDV8hX/group-placeholder.png'; const lockBtn = document.getElementById('btn-lock-group'); const lockBtnIcon = lockBtn.querySelector('i'); const lockBtnText = lockBtn.querySelector('span'); if (state.activeChat.is_locked) { lockBtnText.textContent = 'Unlock Group'; lockBtnIcon.className = 'ph-bold ph-lock-open'; lockBtn.classList.add('text-[#00a884]', 'border-[#00a884]'); } else { lockBtnText.textContent = 'Lock Group'; lockBtnIcon.className = 'ph-bold ph-lock'; lockBtn.classList.remove('text-[#00a884]', 'border-[#00a884]'); } }
+      
+      // *** YAHAN BADLAV KIYA GAYA HAI ***
+      window.toggleGroupLock = async function() { 
+          const newLockStatus = !state.activeChat.is_locked; 
+          const { error } = await supabase.from('groups').update({ is_locked: newLockStatus }).eq('id', state.activeChat.id); 
+          if (!error) { 
+              state.activeChat.is_locked = newLockStatus; 
+              renderGroupEditModal(); 
+              showToast(newLockStatus ? 'Group is now locked (Admin Only).' : 'Group is now unlocked.'); 
+          } else { 
+              console.error('Lock toggle failed:', error); 
+          } 
+      }
+      
+      window.loadGroupEditMembers = async function() { const listEl = document.getElementById('group-edit-members-list'); listEl.innerHTML = ''; const { data: memberLinks } = await supabase.from('group_members').select('user_id, is_admin').eq('group_id', state.activeChat.id); if (!memberLinks) return; const userIds = memberLinks.map(m => m.user_id); const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds); if (!profiles) return; state.activeChat.allMembers = profiles.map(p => ({ ...p, is_admin: memberLinks.find(m => m.user_id === p.id)?.is_admin || false })); state.activeChat.allMembers.forEach(p => { const d = document.createElement('div'); d.className = 'flex items-center gap-3 p-2 rounded-lg'; let actions = ''; if (p.id !== state.user.id) { actions = `<button onclick="openMemberOptions('${p.id}', ${p.is_admin}, '${p.full_name}')" class="ml-auto p-2 app-subtext"><i class="ph-bold ph-dots-three-vertical"></i></button>`; } d.innerHTML = `<img src="${p.avatar_url}" loading="lazy" class="w-8 h-8 rounded-full object-cover"><span class="flex-1 app-text">${p.full_name} ${p.id === state.user.id ? '(You)' : ''}</span>${p.is_admin ? '<span class="text-xs text-[#00a884] font-bold">Admin</span>' : ''}${actions}`; listEl.appendChild(d); }); }
+      window.saveGroupChanges = async function() { const newName = document.getElementById('group-edit-name').value; const newIcon = document.getElementById('group-edit-img').src; if (!newName) return showToast("Group name can't be empty", true); const { error } = await supabase.from('groups').update({ name: newName, avatar_url: newIcon }).eq('id', state.activeChat.id); if (error) { showToast("Error saving: " + error.message, true); } else { showToast("Group info saved!"); state.activeChat.name = newName; state.activeChat.avatar_url = newIcon; document.getElementById('chat-user-name').textContent = newName; document.getElementById('chat-user-avatar').src = newIcon; document.getElementById('modal-group-edit').classList.add('hidden'); loadRecentChats(); } }
+      window.openMemberOptions = function(userId, isCurrentlyAdmin, userName) { state.selectedMemberForAction = userId; document.getElementById('member-options-name').textContent = `Manage ${userName}`; if (isCurrentlyAdmin) { document.getElementById('btn-promote-admin').classList.add('hidden'); document.getElementById('btn-dismiss-admin').classList.remove('hidden'); } else { document.getElementById('btn-promote-admin').classList.remove('hidden'); document.getElementById('btn-dismiss-admin').classList.add('hidden'); } document.getElementById('member-options-overlay').classList.remove('hidden'); }
+      window.handleMemberAction = async function(action) { const userId = state.selectedMemberForAction; const groupId = state.activeChat.id; if (!userId) return; document.getElementById('member-options-overlay').classList.add('hidden'); let error = null; if (action === 'promote') { ({ error } = await supabase.from('group_members').update({ is_admin: true }).eq('group_id', groupId).eq('user_id', userId)); if (!error) showToast("Promoted to admin"); } else if (action === 'demote') { ({ error } = await supabase.from('group_members').update({ is_admin: false }).eq('group_id', groupId).eq('user_id', userId)); if (!error) showToast("Dismissed as admin"); } else if (action === 'remove') { if (confirm("Remove this user from the group?")) { ({ error } = await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId)); if (!error) showToast("User removed"); } } if (error) { showToast("Error: " + error.message, true); } else { loadGroupEditMembers(); } state.selectedMemberForAction = null; }
+      
+      // === GROUP INVITE CODE LOGIC ===
+      window.openJoinGroupModal = function() { document.getElementById('modal-join-group').classList.remove('hidden'); }
+      window.handleJoinGroup = async function() { const code = document.getElementById('join-code-input').value.trim(); if (!code) return showToast("Please enter a code", true); await joinGroupWithCode(code); document.getElementById('join-code-input').value = ''; document.getElementById('modal-join-group').classList.add('hidden'); }
+      async function joinGroupWithCode(inviteCode) { if (!inviteCode) return; showToast("Checking invite code..."); const { data: group, error } = await supabase.from('groups').select('id').eq('invite_code', inviteCode).single(); if (error || !group) { return showToast("Invalid or expired invite code.", true); } const { data: existing } = await supabase.from('group_members').select('user_id').eq('group_id', group.id).eq('user_id', state.user.id).maybeSingle(); if (existing) { return showToast("You are already in this group."); } const { error: insertError } = await supabase.from('group_members').insert({ group_id: group.id, user_id: state.user.id, is_admin: false }); if (insertError) { return showToast("Failed to join group: " + insertError.message, true); } showToast("Successfully joined group!"); loadRecentChats(); }
+      function renderInviteCodeUI() { const controls = document.getElementById('invite-link-controls'); const code = state.activeChat.invite_code; if (code) { controls.innerHTML = `<input type="text" readonly value="${code}" class="w-full app-input app-text p-2 rounded border app-border text-xs"><div class="flex gap-2 mt-2"><button onclick="copyInviteCode()" class="flex-1 app-input py-2 rounded text-[#00a884] text-sm">Copy Code</button><button onclick="generateInviteLink(true)" class="flex-1 bg-[#2a1f1f] text-red-400 py-2 rounded text-sm">Reset</button></div>`; } else { controls.innerHTML = `<button onclick="generateInviteLink(false)" class="w-full app-input py-2 rounded text-[#00a884] text-sm">Generate Invite Code</button>`; } }
+      async function generateInviteLink(isResetting = false) { const newCode = self.crypto.randomUUID(); const { data, error } = await supabase.from('groups').update({ invite_code: newCode }).eq('id', state.activeChat.id).select().single(); if (error) { showToast("Error generating code: " + error.message, true); } else { state.activeChat.invite_code = newCode; renderInviteCodeUI(); showToast(isResetting ? "Code reset" : "Code generated"); } }
+      function copyInviteCode() { if (!state.activeChat.invite_code) return; const code = state.activeChat.invite_code; navigator.clipboard.writeText(code).then(() => { showToast("Invite Code Copied!"); }); }
+
+      // === Event Listeners ===
+      document.getElementById('msg-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+
+
+      // === PUSH NOTIFICATION LOGIC ===
+      const VAPID_PUBLIC_KEY = "BEExmrHoA5hPuHyL4M4Tp1cUT4V-XnP5NQQQE4IJiRGYtVsmTuV7-qf9Y--cPzOtnDuI1LMSX5kvE5CcOEPuZK8";
+      function urlBase64ToUint8Array(base64String) { const padding = '='.repeat((4 - base64String.length % 4) % 4); const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/'); const rawData = window.atob(base64); const outputArray = new Uint8Array(rawData.length); for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); } return outputArray; }
+      async function subscribeToPushNotifications() {
+          if (!('Notification' in window) || !('serviceWorker' in navigator)) { console.log("Push notifications are not supported."); return; }
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') { console.log("Notification permission not granted."); return; }
+          const reg = await navigator.serviceWorker.ready;
+          let subscription = await reg.pushManager.getSubscription();
+          if (subscription === null) {
+              console.log("Subscribing to push...");
+              try {
+                  subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+                  console.log("New subscription:", subscription);
+                  if (state.user) {
+                      const { error } = await supabase.from('profiles').update({ push_subscription: subscription }).eq('id', state.user.id);
+                      if (error) console.error('Error saving subscription:', error); else console.log('Push subscription saved to profile!');
+                  }
+              } catch (err) { console.error("Failed to subscribe:", err); }
+          } else {
+              console.log("User is already subscribed:", subscription);
+              if (state.user) {
+                  const { error } = await supabase.from('profiles').update({ push_subscription: subscription }).eq('id', state.user.id);
+                  if (error) console.error('Error re-saving subscription:', error);
+              }
+          }
+      }
+
+      // +++ NAYE POST UPLOAD FUNCTIONS +++
+
+      // Post modal ko band karne ke liye
+      window.closePostModal = function() {
+          const modal = document.getElementById('modal-create-post');
+          modal.classList.add('hidden');
+          
+          // Modal ko reset karein
+          document.getElementById('post-image-img').src = "";
+          document.getElementById('post-image-img').classList.add('hidden');
+          document.querySelector('#post-image-preview i').classList.remove('hidden');
+          document.getElementById('post-caption-input').value = "";
+          document.getElementById('btn-upload-post').dataset.imageUrl = "";
+          
+          // Wapas 'feed' tab par bhej dein
+          showTab('feed');
+      }
+      
+      // === NAYA: FULL POST VIEW FUNCTIONS ===
+      window.openPostView = async function(postId) {
+          const modal = document.getElementById('modal-post-view');
+          const contentEl = document.getElementById('post-view-content');
+          
+          modal.classList.remove('hidden');
+          contentEl.innerHTML = '<p class="app-subtext text-center p-10">Loading post...</p>';
+
+          // 1. Post ki full details fetch karein (bilkul 'loadFeed' jaisa)
+          let { data: post, error } = await supabase
+              .from('posts')
+              .select('*, profiles ( id, username, avatar_url, full_name, is_verified ), post_likes ( user_id ), post_comments ( id )')
+              .eq('id', postId)
+              .single();
+          
+          if (error || !post) {
+              console.error("Error loading post:", error);
+              contentEl.innerHTML = '<p class="app-subtext text-center p-10 text-red-400">Could not load post.</p>';
+              return;
+          }
+
+          // 2. Post Card HTML banayein (loadFeed se copy kiya gaya)
+          const postCard = document.createElement('div');
+          postCard.className = 'w-full app-modal border-b app-border'; // Feed wale 'mb-4' ki zaroorat nahi
+          
+          const profile = post.profiles; 
+          const postTime = new Date(post.created_at).toLocaleDateString(); 
+          const likeCount = post.post_likes.length;
+          const commentCount = post.post_comments.length;
+          const userHasLiked = post.post_likes.some(like => like.user_id === state.user.id);
+          const likeIconClass = userHasLiked ? 'ph-fill ph-heart text-red-500' : 'ph-bold ph-heart';
+
+          postCard.innerHTML = `
+              <div class="flex items-center gap-3 p-3">
+                  <img src="${profile.avatar_url}" class="w-9 h-9 rounded-full object-cover bg-gray-700 cursor-pointer" onclick="showUserProfile('${profile.id}')">
+                  <div class="cursor-pointer" onclick="showUserProfile('${profile.id}')">
+                      <span class="font-bold text-sm app-text flex items-center gap-1">
+                          ${profile.full_name || profile.username}
+                          ${profile.is_verified ? '<i class="ph-fill ph-seal-check text-blue-400 text-sm"></i>' : ''}
+                      </span>
+                      <span class="text-xs app-subtext">${postTime}</span>
+                  </div>
+                  <button id="post-options-btn-${post.id}" class="ml-auto app-subtext"><i class="ph-bold ph-dots-three-outline"></i></button>
+              </div>
+              
+              <img src="${post.image_url}" class="w-full h-auto max-h-[70vh] object-cover" loading="lazy">
+              
+              <div class="flex items-center gap-4 p-3 text-2xl app-text">
+                  <button onclick="handleLikeToggle(event, '${post.id}', '${post.user_id}')
+"><i class="${likeIconClass}"></i></button>
+                  <button onclick="openComments('${post.id}')"><i class="ph-bold ph-chat-circle-dots"></i></button>
+                  <button onclick="openShareModal('${post.id}')"><i class="ph-bold ph-paper-plane-tilt"></i></button>
+                  <button class="ml-auto"><i class="ph-bold ph-bookmark-simple"></i></button>
+              </div>
+              
+              <div class="px-3 pb-2 text-sm app-text">
+                  <span id="like-count-${post.id}" class="font-bold">${likeCount}</span> likes
+              </div>
+              
+              <div class="px-3 pb-2 text-sm app-text">
+                  <p>
+                      <span class="font-bold cursor-pointer hover:underline" onclick="showUserProfile('${profile.id}')">${profile.full_name}</span>
+                      ${post.caption ? linkify(post.caption.replace(/\n/g, '')) : ''}
+                  </p>
+              </div>
+
+              ${commentCount > 0 ? `
+              <div class="px-3 pb-4 text-sm app-subtext cursor-pointer" onclick="openComments('${post.id}')">
+                  View all ${commentCount} comments
+              </div>` : `
+              <div class="px-3 pb-4 text-sm app-subtext cursor-pointer" onclick="openComments('${post.id}')">
+                  Add a comment...
+              </div>`
+              }
+          `;
+
+          // 3. Delete button ke liye listener add karein (bilkul 'loadFeed' jaisa)
+          const postOptionsBtn = postCard.querySelector(`#post-options-btn-${post.id}`);
+          if (post.user_id === state.user.id) {
+              postOptionsBtn.onclick = (event) => openPostOptions(event, post);
+          } else {
+              postOptionsBtn.classList.add('hidden');
+          }
+          
+          // 4. Content ko modal mein daalein
+          contentEl.innerHTML = '';
+          contentEl.appendChild(postCard);
+      }
+      
+      window.closePostView = function() {
+          document.getElementById('modal-post-view').classList.add('hidden');
+          document.getElementById('post-view-content').innerHTML = ''; // Content ko clear karein
+      }
+
+      // Post ko Supabase par upload karne ke liye
+      window.handlePostUpload = async function() {
+          const postBtn = document.getElementById('btn-upload-post');
+          const caption = document.getElementById('post-caption-input').value;
+          const imageUrl = postBtn.dataset.imageUrl; // Stored URL ko retrieve karein
+
+          if (!imageUrl) {
+              return showToast("Please select and upload an image first.", true);
+          }
+
+          if (!state.user) {
+              return showToast("You must be logged in to post.", true);
+          }
+          
+          postBtn.disabled = true;
+          postBtn.textContent = "Sharing...";
+
+          // Supabase ke naye 'posts' table mein data insert karein
+          const { data, error } = await supabase
+              .from('posts')
+              .insert({
+                  user_id: state.user.id,
+                  image_url: imageUrl,
+                  caption: caption
+              });
+
+          if (error) {
+              console.error('Post upload error:', error);
+              showToast("Failed to share post: " + error.message, true);
+              postBtn.disabled = false;
+              postBtn.textContent = "Share";
+          } else {
+              showToast("Post Shared Successfully!");
+              closePostModal(); // Modal band karein
+              loadFeed(); // <-- YAHAN ADD KIYA GAYA
+          }
+      }
+      // +++ POST FUNCTIONS YAHAN KHATM HOTE HAIN +++
+
+
+      // === NAYE FUNCTIONS (FOLLOW, LIKE, COMMENT, SHARE) ===
+
+      let currentFollowCheck = {}; // Follow button debounce ke liye
+
+      // Follow/Unfollow karne ke liye
+      window.handleFollowToggle = async function(profileId) {
+          if (!state.user || currentFollowCheck[profileId]) return; // Debounce
+          currentFollowCheck[profileId] = true;
+
+          const btn = document.getElementById('btn-follow');
+          const followersCountEl = document.getElementById('profile-followers-count');
+          let currentFollowers = parseInt(followersCountEl.textContent);
+          const isFollowing = btn.dataset.following === 'true';
+
+          if (isFollowing) {
+              // --- Unfollow Logic ---
+              btn.textContent = 'Following';
+              btn.classList.add('bg-gray-500', 'text-white');
+              btn.classList.remove('bg-[#00a884]');
+              const { error } = await supabase
+                  .from('followers')
+                  .delete()
+                  .eq('follower_id', state.user.id)
+                  .eq('following_id', profileId);
+              
+              if (error) {
+                  showToast("Failed to unfollow", true);
+                  console.error('Unfollow Error:', error); // <-- NAYA DEBUGGING
+                  btn.textContent = 'Following'; // Revert
+              } else {
+                  btn.textContent = 'Follow';
+                  btn.dataset.following = 'false';
+                  btn.classList.remove('bg-gray-500', 'text-white');
+                  btn.classList.add('bg-[#00a884]');
+                  followersCountEl.textContent = currentFollowers - 1;
+              }
+          } else {
+              // --- Follow Logic ---
+              btn.textContent = 'Following...';
+              const { error } = await supabase
+                  .from('followers')
+                  .insert({ follower_id: state.user.id, following_id: profileId });
+              
+              if (error) {
+                  showToast("Failed to follow", true);
+                  console.error('Follow Error:', error); // <-- NAYA DEBUGGING
+                  btn.textContent = 'Follow'; // Revert
+              } else {
+                  btn.textContent = 'Following';
+                  btn.dataset.following = 'true';
+                  btn.classList.add('bg-gray-500', 'text-white');
+                  btn.classList.remove('bg-[#00a884]');
+                                        followersCountEl.textContent = currentFollowers + 1;
+                      
+                      // NAYA: Notification bhejien
+                      if (profileId !== state.user.id) { // Khud ko follow karne par notification nahi
+                          const { error: notifError } = await supabase.from('notifications').insert({
+                              user_id: profileId, // Jisko follow kiya
+                              actor_id: state.user.id, // Maine (current user)
+                              type: 'follow'
+                          });
+                          
+                          if (notifError) {
+                              console.error("NOTIFICATION INSERT FAILED:", notifError);
+                              showToast("Debug: Notif Insert Failed: " + notifError.message, true);
+                          }
+                          
+                      }
+
+              }
+          }
+          
+          setTimeout(() => { currentFollowCheck[profileId] = false; }, 1000); // Debounce clear
+      }
+
+      // Post Like/Unlike karne ke liye
+      window.handleLikeToggle = async function(event, postId, postOwnerId) {
+          if (!state.user) return;
+          const btn = event.currentTarget;
+          const icon = btn.querySelector('i');
+          const countEl = document.getElementById(`like-count-${postId}`);
+          let currentLikes = parseInt(countEl.textContent);
+          const isLiked = icon.classList.contains('ph-fill');
+
+          // Optimistic UI Update (Turant response ke liye)
+          if (isLiked) {
+              icon.classList.remove('ph-fill', 'text-red-500');
+              icon.classList.add('ph-bold');
+              countEl.textContent = currentLikes - 1;
+          } else {
+              icon.classList.add('ph-fill', 'text-red-500');
+              icon.classList.remove('ph-bold');
+              countEl.textContent = currentLikes + 1;
+          }
+
+          // Supabase Logic (Background mein)
+          if (isLiked) {
+              // Unlike
+              await supabase.from('post_likes')
+                  .delete()
+                  .eq('user_id', state.user.id)
+                  .eq('post_id', postId);
+          } else {
+              // Like
+              const { error: likeError } = await supabase.from('post_likes')
+                  .insert({ user_id: state.user.id, post_id: postId });
+              
+              // NAYA: Notification bhejien (agar error nahi hai aur user khud ki post like nahi kar raha)
+              if (!likeError && postOwnerId && postOwnerId !== state.user.id) {
+                  const { error: notifError } = await supabase.from('notifications').insert({
+                      user_id: postOwnerId, // Post ke maalik ko
+                      actor_id: state.user.id, // Maine (current user)
+                      type: 'like',
+                      post_id: postId
+                  });
+                  
+                  if (notifError) {
+                      console.error("NOTIFICATION INSERT FAILED:", notifError);
+                      showToast("Debug: Notif Insert Failed: " + notifError.message, true);
+                  }
+                  
+              }
+          }
+
+          // Verify count from server (Data ko sync karne ke liye)
+          const { count: realCount } = await supabase
+              .from('post_likes')
+              .select('id', { count: 'exact' })
+              .eq('post_id', postId);
+          
+          if (countEl) countEl.textContent = realCount;
+      }
+
+      // Comment modal kholne ke liye
+      window.openComments = async function(postId) {
+          state.activePostId = postId; 
+          document.getElementById('comment-modal-avatar').src = state.profile.avatar_url; 
+          const modal = document.getElementById('modal-comments');
+          const listEl = document.getElementById('comments-list');
+          listEl.innerHTML = '<p class="app-subtext text-center p-4">Loading comments...</p>';
+          modal.classList.remove('hidden');
+
+          // --- NAYA REAL-TIME LOGIC ---
+          
+          // 1. Purana listener (agar hai) toh hata dein
+          if (state.commentSub) {
+              supabase.removeChannel(state.commentSub);
+              state.commentSub = null;
+          }
+
+          // 2. Pehle ke comments (Manual Join se) fetch karein
+          const { data: comments, error: commentsError } = await supabase
+              .from('post_comments')
+              .select('*')
+              .eq('post_id', postId)
+              .order('created_at', { ascending: true });
+
+          if (commentsError) {
+              console.error("Comment Load Error (Step 1):", commentsError); 
+              listEl.innerHTML = '<p class="app-subtext text-center p-4 text-red-400">Error loading comments.</p>';
+              return;
+          }
+          
+          listEl.innerHTML = ''; // List ko clear karein
+
+          if (comments.length === 0) {
+              listEl.innerHTML = '<p id="comment-placeholder" class="app-subtext text-center p-4">No comments yet. Be the first!</p>';
+          } else {
+              // 3. Profiles fetch karein
+              const userIds = [...new Set(comments.map(c => c.user_id))];
+              const { data: profiles, error: profilesError } = await supabase
+                  .from('profiles')
+                  .select('id, username, full_name, avatar_url, is_verified')
+                  .in('id', userIds);
+              
+              if (profilesError) {
+                  listEl.innerHTML = '<p class="app-subtext text-center p-4 text-red-400">Error loading user data.</p>';
+                  return;
+              }
+
+              const profileMap = new Map(profiles.map(p => [p.id, p]));
+              
+              // 4. Comments ko render karein
+              comments.forEach(comment => {
+                  const profile = profileMap.get(comment.user_id); 
+                  if (profile) {
+                      renderComment(comment, profile); // Naye helper function ka istemaal
+                  }
+              });
+          }
+
+          // 5. NAYA: Real-time Listener Set karein
+          state.commentSub = supabase.channel(`post-comments-${postId}`)
+              .on('postgres_changes', 
+                  { 
+                      event: 'INSERT', 
+                      schema: 'public', 
+                      table: 'post_comments', 
+                      filter: `post_id=eq.${postId}` 
+                  }, 
+                  async (payload) => {
+                      const newComment = payload.new;
+                      
+                      // Naye comment ke liye profile fetch karein
+                      const { data: profile } = await supabase
+                          .from('profiles')
+                          .select('id, username, full_name, avatar_url, is_verified')
+                          .eq('id', newComment.user_id)
+                          .single();
+                      
+                      if (profile) {
+                          renderComment(newComment, profile); // Naye comment ko render karein
+                      }
+                  }
+              )
+              .subscribe();
+          
+          // --- REAL-TIME LOGIC KHATM HUA ---
+      }
+
+      
+      // NAYA: Comment HTML render karne ke liye helper function
+      window.renderComment = function(comment, profile) {
+          const listEl = document.getElementById('comments-list');
+          
+          // Placeholder "No comments" ko hata dein, agar woh hai
+          const placeholder = document.getElementById('comment-placeholder');
+          if (placeholder) {
+              placeholder.remove();
+          }
+
+          const commentEl = document.createElement('div');
+          commentEl.className = 'flex items-start gap-3 p-3 border-b app-border';
+          commentEl.innerHTML = `
+              <img src="${profile.avatar_url}" class="w-8 h-8 rounded-full object-cover bg-gray-700 cursor-pointer" onclick="showUserProfile('${profile.id}')">
+              <div class="flex-1">
+                  <p class="text-sm app-text leading-snug">
+                      <span class="font-bold cursor-pointer hover:underline" onclick="showUserProfile('${profile.id}')">${profile.full_name}</span>
+                      ${linkify(comment.content)}
+                  </p>
+                  <span class="text-xs app-subtext">${new Date(comment.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+              </div>
+          `;
+          listEl.appendChild(commentEl);
+          
+          // Naye comment par scroll karein
+          listEl.scrollTop = listEl.scrollHeight;
+      }
+
+      // Comment modal band karne ke liye
+      window.closeComments = function() {
+          document.getElementById('modal-comments').classList.add('hidden');
+          state.activePostId = null;
+          
+          // NAYA: Listener ko band karein
+          if (state.commentSub) {
+              supabase.removeChannel(state.commentSub);
+              state.commentSub = null;
+          }
+      }
+      
+      // Naya comment post karne ke liye
+      window.postComment = async function() {
+          const input = document.getElementById('comment-input');
+          const content = input.value.trim();
+          if (!content || !state.activePostId || !state.user) return;
+
+          const btn = document.getElementById('btn-post-comment');
+          btn.disabled = true;
+
+          const { error } = await supabase
+              .from('post_comments')
+              .insert({
+                  user_id: state.user.id,
+                  post_id: state.activePostId,
+                  content: content
+              });
+          
+          if (error) {
+              console.error("Comment Post Error:", error); 
+              showToast("Failed to post comment", true);
+          } else {
+              input.value = '';
+              // Ab humein 'openComments' ko call karne ki zaroorat nahi hai,
+              // kyunki real-time listener apna kaam karega.
+              
+              // Feed ko zaroor refresh karein taaki "2 comments" "3 comments" ban jaaye
+              await loadFeed(); 
+          }
+          btn.disabled = false;
+      }
+
+      // Share modal kholne ke liye (Instagram style)
+      window.openShareModal = async function(postId) {
+          showToast("Loading post to share...");
+
+          // 1. Post ki details fetch karein
+          const { data: postData, error } = await supabase
+              .from('posts')
+              .select('*, profiles!user_id ( username, avatar_url, full_name )')
+              .eq('id', postId)
+              .single();
+
+          if (error || !postData) {
+              return showToast("Could not find post to share.", true);
+          }
+
+          // 2. State mein poora post object save karein
+          state.forwardContent = {
+              type: 'post',
+              post: postData
+          };
+          
+          // 3. 'openForwardModal' ko call karein (jo ab sirf modal dikhayega)
+          openForwardModal();
+      }
+
+      // === NAYA: POST OPTIONS FUNCTIONS ===
+      window.openPostOptions = function(event, post) {
+          event.stopPropagation();
+          
+          // Pehle check karein ki yeh post user ka hai ya nahi
+          if (post.user_id !== state.user.id) {
+              showToast("You can only delete your own posts.");
+              return;
+          }
+          
+          // Post ko state mein save karein
+          state.selectedPostForAction = post;
+          
+          // Modal ko dikhayein
+          document.getElementById('modal-post-options').classList.remove('hidden');
+      }
+
+      window.handlePostAction = async function(action) {
+          const modal = document.getElementById('modal-post-options');
+          modal.classList.add('hidden'); // Modal ko band karein
+          
+          const post = state.selectedPostForAction;
+          if (!post || action !== 'delete') return;
+
+          if (confirm("Are you sure you want to delete this post?")) {
+              showToast("Deleting post...");
+
+              // 1. Post ko 'posts' table se delete karein
+              const { error } = await supabase
+                  .from('posts')
+                  .delete()
+                  .eq('id', post.id)
+                  .eq('user_id', state.user.id); // Double check ownership
+
+              if (error) {
+                  console.error("Delete Post Error:", error);
+                  showToast("Error deleting post: " + error.message, true);
+              } else {
+                  showToast("Post Deleted!");
+                  
+                  // 2. Feed ko refresh karein
+                  loadFeed(); 
+                  
+                  // 3. Agar profile page khula hai, toh usse bhi refresh karein
+                  if (!document.getElementById('view-profile').classList.contains('hidden')) {
+                      // Check karein ki user apni hi profile dekh raha hai ya nahi
+                      const currentAvatar = document.getElementById('profile-page-avatar').src;
+                      if (currentAvatar === state.profile.avatar_url) {
+                           loadProfilePage(state.user.id);
+                      }
+                  }
+              }
+          }
+          
+          state.selectedPostForAction = null; // State ko clear karein
+      }
+
+      // === NAYA: NOTIFICATION FUNCTIONS ===
+      window.openNotifications = async function() {
+          const modal = document.getElementById('modal-notifications');
+          const listEl = document.getElementById('notifications-list');
+          modal.classList.remove('hidden');
+          listEl.innerHTML = '<p class="app-subtext text-center p-10">Loading...</p>';
+
+          // Notifications fetch karein
+          const { data: notifications, error } = await supabase
+              .from('notifications')
+              .select('*, actor:actor_id ( id, full_name, avatar_url, is_verified ), post:post_id ( id, image_url )')
+              .eq('user_id', state.user.id)
+              .order('created_at', { ascending: false })
+              .limit(30);
+
+          if (error) {
+              console.error("Error fetching notifications:", error);
+              listEl.innerHTML = '<p class="app-subtext text-center p-10 text-red-400">Error loading.</p>';
+              return;
+          }
+
+          if (notifications.length === 0) {
+              listEl.innerHTML = '<p class="app-subtext text-center p-10">No notifications yet.</p>';
+          } else {
+              listEl.innerHTML = '';
+              notifications.forEach(renderNotification);
+          }
+
+          // Notifications ko 'read' mark karein
+          document.getElementById('notification-badge').classList.add('hidden');
+          await supabase
+              .from('notifications')
+              .update({ is_read: true })
+              .eq('user_id', state.user.id)
+              .eq('is_read', false);
+      }
+
+      window.closeNotifications = function() {
+          document.getElementById('modal-notifications').classList.add('hidden');
+      }
+
+      window.renderNotification = function(notif) {
+          const listEl = document.getElementById('notifications-list');
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-3 p-3 border-b app-border hover:bg-black/5';
+          
+          let text = '';
+          let postThumb = '';
+
+          // NAYA: Blue tick ko yahan check karein
+          const verifiedTick = notif.actor.is_verified ? ' <i class="ph-fill ph-seal-check text-blue-400 text-sm inline-block"></i>' : '';
+          const actorName = `<span class="font-bold">${notif.actor.full_name}${verifiedTick}</span>`;
+
+          if (notif.type === 'follow') {
+              text = `${actorName} started following you.`;
+          } else if (notif.type === 'like' && notif.post) {
+              text = `${actorName} liked your post.`;
+              postThumb = `<img src="${notif.post.image_url}" class="w-10 h-10 object-cover rounded-md ml-auto" loading="lazy">`;
+          } else {
+              text = `${actorName} sent you a notification.`; // Fallback
+          }
+
+          div.innerHTML = `
+              <img src="${notif.actor.avatar_url}" class="w-10 h-10 rounded-full object-cover bg-gray-700 cursor-pointer" onclick="showUserProfile('${notif.actor.id}'); closeNotifications();">
+              <div class="flex-1 app-text text-sm">
+                  ${text}
+                  <p class="text-xs app-subtext">${getSmartDate(notif.created_at)}</p>
+              </div>
+              ${postThumb}
+          `;
+          listEl.appendChild(div);
+      }
+
+      // NAYA: UNREAD CHAT BADGE KO UPDATE KARNE KE LIYE
+      function updateTotalUnreadBadge(count) {
+          const badge = document.getElementById('chat-badge');
+          if (!badge) return;
+          
+          if (count > 0) {
+              badge.textContent = count > 9 ? '9+' : count;
+              badge.classList.remove('hidden');
+          } else {
+              badge.classList.add('hidden');
+          }
+      }
+
+      // NAYA: UNREAD NOTIFICATIONS CHECK KARNE KE LIYE
+      async function checkForUnreadNotifications() {
+          if (!state.user) return;
+          const { count, error } = await supabase
+              .from('notifications')
+              .select('id', { count: 'exact' })
+              .eq('user_id', state.user.id)
+              .eq('is_read', false);
+
+          if (count && count > 0) {
+              document.getElementById('notification-badge').classList.remove('hidden');
+          } else {
+              document.getElementById('notification-badge').classList.add('hidden');
+          }
+      }
+
+    }); // <-- window.addEventListener('load') yahan band hota hai
   </script>
 </body>
 </html>
